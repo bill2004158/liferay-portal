@@ -867,7 +867,7 @@ public class PortletURLImpl
 					if (_secure) {
 						_layoutFriendlyURL = HttpUtil.protocolize(
 							_layoutFriendlyURL,
-							PropsValues.WEB_SERVER_HTTPS_PORT, true);
+							_request.getServerPort(), true);
 					}
 				}
 			}
