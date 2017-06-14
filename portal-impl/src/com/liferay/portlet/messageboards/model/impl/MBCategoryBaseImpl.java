@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.messageboards.model.impl;
 
-import com.liferay.portlet.messageboards.model.MBCategory;
-import com.liferay.portlet.messageboards.service.MBCategoryLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.message.boards.kernel.model.MBCategory;
+import com.liferay.message.boards.kernel.service.MBCategoryLocalServiceUtil;
 
 /**
  * The extended model base implementation for the MBCategory service. Represents a row in the &quot;MBCategory&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.messageboards.service.MBCategoryLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see MBCategoryImpl
- * @see com.liferay.portlet.messageboards.model.MBCategory
+ * @see MBCategory
  * @generated
  */
+@ProviderType
 public abstract class MBCategoryBaseImpl extends MBCategoryModelImpl
 	implements MBCategory {
 	/*

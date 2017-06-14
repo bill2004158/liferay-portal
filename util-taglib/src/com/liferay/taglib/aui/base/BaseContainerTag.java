@@ -24,7 +24,7 @@ import javax.servlet.jsp.JspException;
  * @author Julio Camarero
  * @generated
  */
-public class BaseContainerTag extends com.liferay.taglib.util.IncludeTag {
+public abstract class BaseContainerTag extends com.liferay.taglib.util.IncludeTag {
 
 	@Override
 	public int doStartTag() throws JspException {
@@ -47,24 +47,20 @@ public class BaseContainerTag extends com.liferay.taglib.util.IncludeTag {
 
 	public void setCssClass(java.lang.String cssClass) {
 		_cssClass = cssClass;
-
-		setScopedAttribute("cssClass", cssClass);
 	}
 
 	public void setFluid(boolean fluid) {
 		_fluid = fluid;
-
-		setScopedAttribute("fluid", fluid);
 	}
 
 	public void setId(java.lang.String id) {
 		_id = id;
-
-		setScopedAttribute("id", id);
 	}
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_cssClass = null;
 		_fluid = true;
 		_id = null;
@@ -82,9 +78,9 @@ public class BaseContainerTag extends com.liferay.taglib.util.IncludeTag {
 
 	@Override
 	protected void setAttributes(HttpServletRequest request) {
-		setNamespacedAttribute(request, "cssClass", _cssClass);
-		setNamespacedAttribute(request, "fluid", _fluid);
-		setNamespacedAttribute(request, "id", _id);
+		request.setAttribute("aui:container:cssClass", _cssClass);
+		request.setAttribute("aui:container:fluid", String.valueOf(_fluid));
+		request.setAttribute("aui:container:id", _id);
 	}
 
 	protected static final String _ATTRIBUTE_NAMESPACE = "aui:container:";

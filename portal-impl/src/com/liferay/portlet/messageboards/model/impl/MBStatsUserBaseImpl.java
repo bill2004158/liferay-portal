@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.messageboards.model.impl;
 
-import com.liferay.portlet.messageboards.model.MBStatsUser;
-import com.liferay.portlet.messageboards.service.MBStatsUserLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.message.boards.kernel.model.MBStatsUser;
+import com.liferay.message.boards.kernel.service.MBStatsUserLocalServiceUtil;
 
 /**
  * The extended model base implementation for the MBStatsUser service. Represents a row in the &quot;MBStatsUser&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.messageboards.service.MBStatsUserLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see MBStatsUserImpl
- * @see com.liferay.portlet.messageboards.model.MBStatsUser
+ * @see MBStatsUser
  * @generated
  */
+@ProviderType
 public abstract class MBStatsUserBaseImpl extends MBStatsUserModelImpl
 	implements MBStatsUser {
 	/*

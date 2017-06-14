@@ -17,7 +17,6 @@ package com.liferay.portal.nio.intraband.cache;
 import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheManager;
 import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
-import com.liferay.portal.kernel.nio.intraband.proxy.ExceptionHandler;
 import com.liferay.portal.nio.intraband.proxy.IntrabandProxyUtil;
 import com.liferay.portal.nio.intraband.proxy.WarnLogExceptionHandler;
 
@@ -30,11 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Shuyang Zhou
  */
 public abstract class BaseIntrabandPortalCacheManager
-		<K extends Serializable, V extends Serializable>
-	implements PortalCacheManager<K, V> {
+	<K extends Serializable, V extends Serializable>
+		implements PortalCacheManager<K, V> {
 
 	public static Class<? extends PortalCache<?, ?>> getPortalCacheStubClass() {
-		return _stubClass;
+		return _STUB_CLASS;
 	}
 
 	@Override
@@ -43,38 +42,39 @@ public abstract class BaseIntrabandPortalCacheManager
 	}
 
 	@Override
-	public PortalCache<K, V> getCache(String name) {
-		return getCache(name, false);
+	public PortalCache<K, V> getPortalCache(String portalCacheName) {
+		return getPortalCache(portalCacheName, false);
 	}
 
 	@Override
-	public PortalCache<K, V> getCache(String name, boolean blocking) {
-		PortalCache<K, V> portalCache = _portalCaches.get(name);
+	public PortalCache<K, V> getPortalCache(
+		String portalCacheName, boolean blocking) {
+
+		PortalCache<K, V> portalCache = _portalCaches.get(portalCacheName);
 
 		if (portalCache == null) {
 			portalCache = (PortalCache<K, V>)IntrabandProxyUtil.newStubInstance(
-				_stubClass, name, _registrationReference, _exceptionHandler);
+				_STUB_CLASS, portalCacheName, _registrationReference,
+				WarnLogExceptionHandler.INSTANCE);
 
-			_portalCaches.put(name, portalCache);
+			_portalCaches.put(portalCacheName, portalCache);
 		}
 
 		return portalCache;
 	}
 
 	@Override
-	public void removeCache(String name) {
-		_portalCaches.remove(name);
+	public void removePortalCache(String portalCacheName) {
+		_portalCaches.remove(portalCacheName);
 	}
 
-	private static ExceptionHandler _exceptionHandler =
-		new WarnLogExceptionHandler();
-	private static Class<? extends PortalCache<?, ?>> _stubClass =
+	private static final Class<? extends PortalCache<?, ?>> _STUB_CLASS =
 		(Class<? extends PortalCache<?, ?>>)
 			IntrabandProxyUtil.getStubClass(
 				PortalCache.class, PortalCache.class.getName());
 
-	private Map<String, PortalCache<K, V>> _portalCaches =
-		new ConcurrentHashMap<String, PortalCache<K, V>>();
-	private RegistrationReference _registrationReference;
+	private final Map<String, PortalCache<K, V>> _portalCaches =
+		new ConcurrentHashMap<>();
+	private final RegistrationReference _registrationReference = null;
 
 }

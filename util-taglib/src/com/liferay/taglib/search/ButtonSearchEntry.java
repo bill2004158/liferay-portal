@@ -16,7 +16,10 @@ package com.liferay.taglib.search;
 
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 
-import javax.servlet.jsp.PageContext;
+import java.io.Writer;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Brian Wing Shun Chan
@@ -33,23 +36,20 @@ public class ButtonSearchEntry extends TextSearchEntry {
 	}
 
 	@Override
-	public void print(Object object) throws Exception {
-		if (!(object instanceof PageContext)) {
-			return;
-		}
-
-		PageContext pageContext = (PageContext)object;
+	public void print(
+			Writer writer, HttpServletRequest request,
+			HttpServletResponse response)
+		throws Exception {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("<input type=\"button\" ");
-		sb.append("value=\"");
+		sb.append("<input type=\"button\" value=\"");
 		sb.append(getName());
 		sb.append("\" onClick=\"");
 		sb.append(getHref());
 		sb.append("\">");
 
-		pageContext.getOut().print(sb.toString());
+		writer.write(sb.toString());
 	}
 
 }

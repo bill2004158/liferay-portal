@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.WorkflowDefinitionLink;
-import com.liferay.portal.service.WorkflowDefinitionLinkLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.WorkflowDefinitionLink;
+import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalServiceUtil;
 
 /**
  * The extended model base implementation for the WorkflowDefinitionLink service. Represents a row in the &quot;WorkflowDefinitionLink&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.WorkflowDefinitionLinkLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see WorkflowDefinitionLinkImpl
- * @see com.liferay.portal.model.WorkflowDefinitionLink
+ * @see WorkflowDefinitionLink
  * @generated
  */
+@ProviderType
 public abstract class WorkflowDefinitionLinkBaseImpl
 	extends WorkflowDefinitionLinkModelImpl implements WorkflowDefinitionLink {
 	/*

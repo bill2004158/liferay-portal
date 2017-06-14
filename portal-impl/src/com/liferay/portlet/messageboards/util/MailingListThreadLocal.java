@@ -29,8 +29,9 @@ public class MailingListThreadLocal {
 		_sourceMailingList.set(sourceMailingList);
 	}
 
-	private static ThreadLocal<Boolean> _sourceMailingList =
-		new InitialThreadLocal<Boolean>(
-			MailingListThreadLocal.class + "._sourceMailingList", false);
+	private static final ThreadLocal<Boolean> _sourceMailingList =
+		new InitialThreadLocal<>(
+			MailingListThreadLocal.class + "._sourceMailingList",
+			() -> Boolean.FALSE);
 
 }

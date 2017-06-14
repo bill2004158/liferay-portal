@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.Contact;
-import com.liferay.portal.service.ContactLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.Contact;
+import com.liferay.portal.kernel.service.ContactLocalServiceUtil;
 
 /**
  * The extended model base implementation for the Contact service. Represents a row in the &quot;Contact_&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.ContactLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ContactImpl
- * @see com.liferay.portal.model.Contact
+ * @see Contact
  * @generated
  */
+@ProviderType
 public abstract class ContactBaseImpl extends ContactModelImpl
 	implements Contact {
 	/*

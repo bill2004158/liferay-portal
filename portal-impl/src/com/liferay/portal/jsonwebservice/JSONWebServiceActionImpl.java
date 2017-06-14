@@ -20,12 +20,12 @@ import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceActionMapping;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceNaming;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.CamelCaseUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MethodParameter;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.service.ServiceContext;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -108,6 +108,10 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 	}
 
 	private Object _convertType(Object inputObject, Class<?> targetType) {
+		if (targetType == null) {
+			return inputObject;
+		}
+
 		Object outputObject = null;
 
 		try {
@@ -139,6 +143,8 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 						inputObject, outputObject);
 
 					beanCopy.copy();
+
+					return outputObject;
 				}
 				catch (Exception e) {
 					throw new TypeConversionException(e);
@@ -171,7 +177,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 						valueString).concat(StringPool.CLOSE_BRACKET);
 				}
 
-				list = JSONFactoryUtil.looseDeserializeSafe(
+				list = JSONFactoryUtil.looseDeserialize(
 					valueString, ArrayList.class);
 			}
 
@@ -208,7 +214,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 						valueString).concat(StringPool.CLOSE_BRACKET);
 				}
 
-				list = JSONFactoryUtil.looseDeserializeSafe(
+				list = JSONFactoryUtil.looseDeserialize(
 					valueString, ArrayList.class);
 			}
 
@@ -232,7 +238,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 
 				valueString = valueString.trim();
 
-				map = JSONFactoryUtil.looseDeserializeSafe(
+				map = JSONFactoryUtil.looseDeserialize(
 					valueString, HashMap.class);
 			}
 
@@ -251,7 +257,12 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 							null, parameterType);
 					}
 					catch (Exception e2) {
-						throw new ClassCastException(e1.getMessage());
+						ClassCastException cce = new ClassCastException(
+							e1.getMessage());
+
+						cce.addSuppressed(e2);
+
+						throw cce;
 					}
 
 					BeanCopy beanCopy = BeanCopy.beans(value, parameterValue);
@@ -267,7 +278,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 						throw new ClassCastException(e1.getMessage());
 					}
 
-					parameterValue = JSONFactoryUtil.looseDeserializeSafe(
+					parameterValue = JSONFactoryUtil.looseDeserialize(
 						valueString, parameterType);
 				}
 			}
@@ -283,7 +294,14 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 		if ((parameterName != null) && parameterName.equals("serviceContext") &&
 			parameterType.equals(ServiceContext.class)) {
 
-			return new ServiceContext();
+			ServiceContext serviceContext =
+				_jsonWebServiceActionParameters.getServiceContext();
+
+			if (serviceContext == null) {
+				serviceContext = new ServiceContext();
+			}
+
+			return serviceContext;
 		}
 
 		String className = parameterType.getName();
@@ -305,7 +323,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 			return list;
 		}
 
-		List<Object> newList = new ArrayList<Object>(list.size());
+		List<Object> newList = new ArrayList<>(list.size());
 
 		for (Object entry : list) {
 			if (entry != null) {
@@ -327,7 +345,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 			return map;
 		}
 
-		Map<Object, Object> newMap = new HashMap<Object, Object>(map.size());
+		Map<Object, Object> newMap = new HashMap<>(map.size());
 
 		for (Map.Entry<?, ?> entry : map.entrySet()) {
 			Object key = _convertType(entry.getKey(), types[0]);
@@ -421,7 +439,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 
 					parameterType = classLoader.loadClass(parameterTypeName);
 
-					if (!ReflectUtil.isSubclass(
+					if (!ReflectUtil.isTypeOf(
 							parameterType, methodParameters[i].getType())) {
 
 						throw new IllegalArgumentException(
@@ -447,8 +465,7 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 						parameterName.equals("serviceContext")) {
 
 						if ((parameterValue != null) &&
-							ServiceContext.class.isAssignableFrom(
-								parameterValue.getClass())) {
+							(parameterValue instanceof ServiceContext)) {
 
 							serviceContext.merge(
 								(ServiceContext)parameterValue);
@@ -467,11 +484,12 @@ public class JSONWebServiceActionImpl implements JSONWebServiceAction {
 		return parameters;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		JSONWebServiceActionImpl.class);
 
-	private JSONWebServiceActionConfig _jsonWebServiceActionConfig;
-	private JSONWebServiceActionParameters _jsonWebServiceActionParameters;
-	private JSONWebServiceNaming _jsonWebServiceNaming;
+	private final JSONWebServiceActionConfig _jsonWebServiceActionConfig;
+	private final JSONWebServiceActionParameters
+		_jsonWebServiceActionParameters;
+	private final JSONWebServiceNaming _jsonWebServiceNaming;
 
 }

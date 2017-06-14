@@ -1,3 +1,6 @@
-Bundle-Version: ${plugin.full.version}
-Export-Package: *
-Include-Resource: classes
+Bundle-SymbolicName: com.ctc.wstx
+Bundle-Version: 3.2.4.LIFERAY-PATCHED-1
+Export-Package:\
+	com.ctc.wstx.*,\
+	\
+	org.codehaus.stax2.*

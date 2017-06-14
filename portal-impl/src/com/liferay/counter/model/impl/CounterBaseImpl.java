@@ -14,8 +14,10 @@
 
 package com.liferay.counter.model.impl;
 
-import com.liferay.counter.model.Counter;
-import com.liferay.counter.service.CounterLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.counter.kernel.model.Counter;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
 
 /**
  * The extended model base implementation for the Counter service. Represents a row in the &quot;Counter&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.counter.service.CounterLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see CounterImpl
- * @see com.liferay.counter.model.Counter
+ * @see Counter
  * @generated
  */
+@ProviderType
 public abstract class CounterBaseImpl extends CounterModelImpl
 	implements Counter {
 	/*

@@ -14,6 +14,8 @@
 
 package com.liferay.taglib;
 
+import static javax.servlet.jsp.tagext.Tag.SKIP_BODY;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.Tag;
@@ -25,14 +27,11 @@ import javax.servlet.jsp.tagext.Tag;
  *
  * @author Shuyang Zhou
  */
-public class TagSupport implements Tag {
+public class TagSupport implements DirectTag, Tag {
 
 	public static Tag findAncestorWithClass(Tag fromTag, Class<?> clazz) {
-		boolean isInterface = false;
-
 		if ((fromTag == null) || (clazz == null) ||
-			(!Tag.class.isAssignableFrom(clazz) &&
-			 !(isInterface = clazz.isInterface()))) {
+			(!Tag.class.isAssignableFrom(clazz) && !clazz.isInterface())) {
 
 			return null;
 		}
@@ -44,9 +43,7 @@ public class TagSupport implements Tag {
 				return null;
 			}
 
-			if ((isInterface && clazz.isInstance(parentTag)) ||
-				clazz.isAssignableFrom(parentTag.getClass())) {
-
+			if (clazz.isInstance(parentTag)) {
 				return parentTag;
 			}
 

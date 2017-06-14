@@ -14,19 +14,22 @@
 
 package com.liferay.portal.service.http;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.HttpPrincipal;
+import com.liferay.portal.kernel.service.PortletPreferencesServiceUtil;
+import com.liferay.portal.kernel.service.http.TunnelUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
-import com.liferay.portal.security.auth.HttpPrincipal;
-import com.liferay.portal.service.PortletPreferencesServiceUtil;
 
 /**
  * Provides the HTTP utility for the
- * {@link com.liferay.portal.service.PortletPreferencesServiceUtil} service utility. The
+ * {@link PortletPreferencesServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link com.liferay.portal.security.auth.HttpPrincipal} parameter.
+ * {@link HttpPrincipal} parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -45,10 +48,11 @@ import com.liferay.portal.service.PortletPreferencesServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see PortletPreferencesServiceSoap
- * @see com.liferay.portal.security.auth.HttpPrincipal
- * @see com.liferay.portal.service.PortletPreferencesServiceUtil
+ * @see HttpPrincipal
+ * @see PortletPreferencesServiceUtil
  * @generated
  */
+@ProviderType
 public class PortletPreferencesServiceHttp {
 	public static void deleteArchivedPreferences(HttpPrincipal httpPrincipal,
 		long portletItemId)
@@ -80,7 +84,7 @@ public class PortletPreferencesServiceHttp {
 	}
 
 	public static void restoreArchivedPreferences(HttpPrincipal httpPrincipal,
-		long groupId, com.liferay.portal.model.Layout layout,
+		long groupId, com.liferay.portal.kernel.model.Layout layout,
 		java.lang.String portletId, long portletItemId,
 		javax.portlet.PortletPreferences preferences)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -111,9 +115,9 @@ public class PortletPreferencesServiceHttp {
 	}
 
 	public static void restoreArchivedPreferences(HttpPrincipal httpPrincipal,
-		long groupId, com.liferay.portal.model.Layout layout,
+		long groupId, com.liferay.portal.kernel.model.Layout layout,
 		java.lang.String portletId,
-		com.liferay.portal.model.PortletItem portletItem,
+		com.liferay.portal.kernel.model.PortletItem portletItem,
 		javax.portlet.PortletPreferences preferences)
 		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
@@ -144,8 +148,8 @@ public class PortletPreferencesServiceHttp {
 
 	public static void restoreArchivedPreferences(HttpPrincipal httpPrincipal,
 		long groupId, java.lang.String name,
-		com.liferay.portal.model.Layout layout, java.lang.String portletId,
-		javax.portlet.PortletPreferences preferences)
+		com.liferay.portal.kernel.model.Layout layout,
+		java.lang.String portletId, javax.portlet.PortletPreferences preferences)
 		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(PortletPreferencesServiceUtil.class,
@@ -208,18 +212,19 @@ public class PortletPreferencesServiceHttp {
 			long.class
 		};
 	private static final Class<?>[] _restoreArchivedPreferencesParameterTypes1 = new Class[] {
-			long.class, com.liferay.portal.model.Layout.class,
+			long.class, com.liferay.portal.kernel.model.Layout.class,
 			java.lang.String.class, long.class,
 			javax.portlet.PortletPreferences.class
 		};
 	private static final Class<?>[] _restoreArchivedPreferencesParameterTypes2 = new Class[] {
-			long.class, com.liferay.portal.model.Layout.class,
-			java.lang.String.class, com.liferay.portal.model.PortletItem.class,
+			long.class, com.liferay.portal.kernel.model.Layout.class,
+			java.lang.String.class,
+			com.liferay.portal.kernel.model.PortletItem.class,
 			javax.portlet.PortletPreferences.class
 		};
 	private static final Class<?>[] _restoreArchivedPreferencesParameterTypes3 = new Class[] {
 			long.class, java.lang.String.class,
-			com.liferay.portal.model.Layout.class, java.lang.String.class,
+			com.liferay.portal.kernel.model.Layout.class, java.lang.String.class,
 			javax.portlet.PortletPreferences.class
 		};
 	private static final Class<?>[] _updateArchivePreferencesParameterTypes4 = new Class[] {

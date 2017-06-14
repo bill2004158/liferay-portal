@@ -14,14 +14,15 @@
 
 package com.liferay.portal.servlet;
 
+import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PredicateFilter;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.util.comparator.PortletNameComparator;
+import com.liferay.portal.kernel.util.comparator.PortletNameComparator;
 import com.liferay.portlet.PortletResourceAccessor;
 
 import java.util.ArrayList;
@@ -34,11 +35,13 @@ import java.util.Set;
 public class ComboServletStaticURLGenerator {
 
 	public List<String> generate(List<Portlet> portlets) {
-		List<String> urls = new ArrayList<String>();
+		List<String> urls = new ArrayList<>();
 
 		StringBundler sb = new StringBundler();
 
 		long timestamp = _timestamp;
+
+		portlets = ListUtil.copy(portlets);
 
 		portlets = ListUtil.sort(portlets, _portletNameComparator);
 
@@ -46,15 +49,23 @@ public class ComboServletStaticURLGenerator {
 			for (PortletResourceAccessor portletResourceAccessor :
 					_portletResourceAccessors) {
 
-				List<String> portletResources = ListUtil.sort(
-					portletResourceAccessor.get(portlet));
+				List<String> portletResources = portletResourceAccessor.get(
+					portlet);
 
 				for (String portletResource : portletResources) {
 					if (!_predicateFilter.filter(portletResource)) {
 						continue;
 					}
 
-					if (_visitedURLs.contains(portletResource)) {
+					String url = portletResource;
+
+					if (!HttpUtil.hasProtocol(portletResource)) {
+						url =
+							PortalUtil.getPathProxy() +
+								portlet.getContextPath() + portletResource;
+					}
+
+					if (_visitedURLs.contains(url)) {
 						continue;
 					}
 
@@ -64,14 +75,17 @@ public class ComboServletStaticURLGenerator {
 					else {
 						sb.append(StringPool.AMPERSAND);
 
-						sb.append(portlet.getPortletId());
-						sb.append(StringPool.COLON);
-						sb.append(HtmlUtil.escape(portletResource));
+						if (!portletResourceAccessor.isPortalResource()) {
+							sb.append(portlet.getPortletId());
+							sb.append(StringPool.COLON);
+						}
+
+						sb.append(HtmlUtil.escapeURL(portletResource));
 
 						timestamp = Math.max(timestamp, portlet.getTimestamp());
 					}
 
-					_visitedURLs.add(portletResource);
+					_visitedURLs.add(url);
 				}
 			}
 		}
@@ -109,7 +123,7 @@ public class ComboServletStaticURLGenerator {
 		_visitedURLs = visitedURLs;
 	}
 
-	private static PortletNameComparator _portletNameComparator =
+	private static final PortletNameComparator _portletNameComparator =
 		new PortletNameComparator();
 
 	private PortletResourceAccessor[] _portletResourceAccessors;

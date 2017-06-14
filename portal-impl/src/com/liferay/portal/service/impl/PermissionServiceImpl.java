@@ -14,33 +14,39 @@
 
 package com.liferay.portal.service.impl;
 
-import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
+import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceMode;
+import com.liferay.portal.kernel.model.AuditedModel;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.GroupedModel;
+import com.liferay.portal.kernel.model.PermissionedModel;
+import com.liferay.portal.kernel.model.PortletConstants;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.ResourcePermission;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.Team;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.BaseModelPermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
+import com.liferay.portal.kernel.service.permission.TeamPermissionUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.model.AuditedModel;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.GroupedModel;
-import com.liferay.portal.model.PermissionedModel;
-import com.liferay.portal.model.PortletConstants;
-import com.liferay.portal.model.ResourceConstants;
-import com.liferay.portal.model.ResourcePermission;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.Team;
-import com.liferay.portal.security.auth.PrincipalException;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.security.permission.BaseModelPermissionChecker;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.security.permission.ResourceActionsUtil;
 import com.liferay.portal.service.base.PermissionServiceBaseImpl;
-import com.liferay.portal.service.permission.PortletPermissionUtil;
-import com.liferay.portal.service.permission.TeamPermissionUtil;
-import com.liferay.portlet.asset.AssetRendererFactoryRegistryUtil;
-import com.liferay.portlet.asset.model.AssetRendererFactory;
+import com.liferay.registry.Filter;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceReference;
+import com.liferay.registry.ServiceTracker;
+import com.liferay.registry.ServiceTrackerCustomizer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides the remote service for checking permissions.
@@ -50,15 +56,28 @@ import java.util.Map;
  */
 public class PermissionServiceImpl extends PermissionServiceBaseImpl {
 
+	@Override
+	public void afterPropertiesSet() {
+		super.afterPropertiesSet();
+
+		Registry registry = RegistryUtil.getRegistry();
+
+		Filter filter = registry.getFilter(
+			"(&(model.class.name=*)(objectClass=" +
+				BaseModelPermissionChecker.class.getName() + "))");
+
+		_serviceTracker = registry.trackServices(
+			filter, new BaseModelPermissionCheckerServiceTrackerCustomizer());
+
+		_serviceTracker.open();
+	}
+
 	/**
 	 * Checks to see if the group has permission to the service.
 	 *
-	 * @param  groupId the primary key of the group
-	 * @param  name the service name
-	 * @param  primKey the primary key of the service
-	 * @throws PortalException if the group did not have permission to the
-	 *         service, if a group with the primary key could not be found or if
-	 *         the permission information was invalid
+	 * @param groupId the primary key of the group
+	 * @param name the service name
+	 * @param primKey the primary key of the service
 	 */
 	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
 	@Override
@@ -72,12 +91,9 @@ public class PermissionServiceImpl extends PermissionServiceBaseImpl {
 	/**
 	 * Checks to see if the group has permission to the service.
 	 *
-	 * @param  groupId the primary key of the group
-	 * @param  name the service name
-	 * @param  primKey the primary key of the service
-	 * @throws PortalException if the group did not have permission to the
-	 *         service, if a group with the primary key could not be found or if
-	 *         the permission information was invalid
+	 * @param groupId the primary key of the group
+	 * @param name the service name
+	 * @param primKey the primary key of the service
 	 */
 	@Override
 	public void checkPermission(long groupId, String name, String primKey)
@@ -98,7 +114,7 @@ public class PermissionServiceImpl extends PermissionServiceBaseImpl {
 
 			Team team = teamLocalService.fetchTeam(classPK);
 
-			groupId = team.getGroupId();
+			classPK = team.getGroupId();
 
 			actionId = ActionKeys.MANAGE_TEAMS;
 		}
@@ -139,12 +155,13 @@ public class PermissionServiceImpl extends PermissionServiceBaseImpl {
 				pos + PortletConstants.LAYOUT_SEPARATOR.length());
 
 			PortletPermissionUtil.check(
-				permissionChecker, plid, portletId, ActionKeys.CONFIGURATION);
+				permissionChecker, groupId, plid, portletId,
+				ActionKeys.CONFIGURATION);
 		}
 		else if (!permissionChecker.hasPermission(
 					groupId, name, primKey, ActionKeys.PERMISSIONS)) {
 
-			AssetRendererFactory assetRendererFactory =
+			AssetRendererFactory<?> assetRendererFactory =
 				AssetRendererFactoryRegistryUtil.
 					getAssetRendererFactoryByClassName(name);
 
@@ -219,14 +236,64 @@ public class PermissionServiceImpl extends PermissionServiceBaseImpl {
 						groupId, name, primKey,
 						ActionKeys.DEFINE_PERMISSIONS)) {
 
-					throw new PrincipalException();
+					throw new PrincipalException.MustHavePermission(
+						permissionChecker, name, Long.valueOf(primKey),
+						ActionKeys.DEFINE_PERMISSIONS);
 				}
 			}
 		}
 	}
 
-	@BeanReference(name = "baseModelPermissionCheckers")
-	private Map<String, BaseModelPermissionChecker>
-		_baseModelPermissionCheckers;
+	private final Map<String, BaseModelPermissionChecker>
+		_baseModelPermissionCheckers = new ConcurrentHashMap<>();
+	private ServiceTracker
+		<BaseModelPermissionChecker, BaseModelPermissionChecker>
+			_serviceTracker;
+
+	private class BaseModelPermissionCheckerServiceTrackerCustomizer
+		implements
+			ServiceTrackerCustomizer
+				<BaseModelPermissionChecker, BaseModelPermissionChecker> {
+
+		@Override
+		public BaseModelPermissionChecker addingService(
+			ServiceReference<BaseModelPermissionChecker> serviceReference) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			BaseModelPermissionChecker baseModelPermissionChecker =
+				registry.getService(serviceReference);
+
+			String modelClassName = GetterUtil.getString(
+				serviceReference.getProperty("model.class.name"));
+
+			_baseModelPermissionCheckers.put(
+				modelClassName, baseModelPermissionChecker);
+
+			return baseModelPermissionChecker;
+		}
+
+		@Override
+		public void modifiedService(
+			ServiceReference<BaseModelPermissionChecker> serviceReference,
+			BaseModelPermissionChecker baseModelPermissionChecker) {
+		}
+
+		@Override
+		public void removedService(
+			ServiceReference<BaseModelPermissionChecker> serviceReference,
+			BaseModelPermissionChecker baseModelPermissionChecker) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			registry.ungetService(serviceReference);
+
+			String modelClassName = GetterUtil.getString(
+				serviceReference.getProperty("model.class.name"));
+
+			_baseModelPermissionCheckers.remove(modelClassName);
+		}
+
+	}
 
 }

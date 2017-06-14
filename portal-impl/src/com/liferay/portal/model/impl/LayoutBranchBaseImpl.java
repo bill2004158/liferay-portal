@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.LayoutBranch;
-import com.liferay.portal.service.LayoutBranchLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.LayoutBranch;
+import com.liferay.portal.kernel.service.LayoutBranchLocalServiceUtil;
 
 /**
  * The extended model base implementation for the LayoutBranch service. Represents a row in the &quot;LayoutBranch&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.LayoutBranchLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see LayoutBranchImpl
- * @see com.liferay.portal.model.LayoutBranch
+ * @see LayoutBranch
  * @generated
  */
+@ProviderType
 public abstract class LayoutBranchBaseImpl extends LayoutBranchModelImpl
 	implements LayoutBranch {
 	/*

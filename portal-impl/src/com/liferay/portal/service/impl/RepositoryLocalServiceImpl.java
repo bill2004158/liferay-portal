@@ -14,41 +14,37 @@
 
 package com.liferay.portal.service.impl;
 
-import com.liferay.portal.InvalidRepositoryException;
-import com.liferay.portal.NoSuchRepositoryException;
-import com.liferay.portal.kernel.cache.CacheRegistryItem;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import com.liferay.document.library.kernel.exception.RepositoryNameException;
+import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.exception.InvalidRepositoryException;
+import com.liferay.portal.kernel.exception.NoSuchRepositoryException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Repository;
+import com.liferay.portal.kernel.model.SystemEventConstants;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.repository.InvalidRepositoryIdException;
 import com.liferay.portal.kernel.repository.LocalRepository;
-import com.liferay.portal.kernel.repository.LocalRepositoryFactoryUtil;
-import com.liferay.portal.kernel.repository.RepositoryException;
 import com.liferay.portal.kernel.repository.RepositoryFactoryUtil;
+import com.liferay.portal.kernel.repository.RepositoryProvider;
+import com.liferay.portal.kernel.repository.UndeployedExternalRepositoryException;
+import com.liferay.portal.kernel.repository.capabilities.RepositoryEventTriggerCapability;
+import com.liferay.portal.kernel.repository.event.RepositoryEventType;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.Repository;
-import com.liferay.portal.model.SystemEventConstants;
-import com.liferay.portal.model.User;
-import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.base.RepositoryLocalServiceBaseImpl;
-import com.liferay.portal.util.RepositoryUtil;
-import com.liferay.portlet.documentlibrary.RepositoryNameException;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Alexander Chow
  */
-public class RepositoryLocalServiceImpl
-	extends RepositoryLocalServiceBaseImpl implements CacheRegistryItem {
+public class RepositoryLocalServiceImpl extends RepositoryLocalServiceBaseImpl {
 
 	@Override
 	public Repository addRepository(
@@ -59,7 +55,6 @@ public class RepositoryLocalServiceImpl
 		throws PortalException {
 
 		User user = userPersistence.findByPrimaryKey(userId);
-		Date now = new Date();
 
 		long repositoryId = counterLocalService.increment();
 
@@ -70,8 +65,6 @@ public class RepositoryLocalServiceImpl
 		repository.setCompanyId(user.getCompanyId());
 		repository.setUserId(user.getUserId());
 		repository.setUserName(user.getFullName());
-		repository.setCreateDate(now);
-		repository.setModifiedDate(now);
 		repository.setClassNameId(classNameId);
 		repository.setName(name);
 		repository.setDescription(description);
@@ -85,7 +78,7 @@ public class RepositoryLocalServiceImpl
 		repositoryPersistence.update(repository);
 
 		try {
-			RepositoryFactoryUtil.create(repositoryId);
+			RepositoryFactoryUtil.createRepository(repositoryId);
 		}
 		catch (Exception e) {
 			if (_log.isWarnEnabled()) {
@@ -96,32 +89,6 @@ public class RepositoryLocalServiceImpl
 		}
 
 		return repository;
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #addRepository(long, long,
-	 *             long, long, String, String, String, UnicodeProperties,
-	 *             boolean, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public Repository addRepository(
-			long userId, long groupId, long classNameId, long parentFolderId,
-			String name, String description, String portletId,
-			UnicodeProperties typeSettingsProperties,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return addRepository(
-			userId, groupId, classNameId, parentFolderId, name, description,
-			portletId, typeSettingsProperties, false, serviceContext);
-	}
-
-	@Override
-	public void afterPropertiesSet() {
-		super.afterPropertiesSet();
-
-		CacheRegistryUtil.register(this);
 	}
 
 	@Override
@@ -136,7 +103,7 @@ public class RepositoryLocalServiceImpl
 			repositoryPersistence.findByPrimaryKey(repositoryId);
 		}
 		catch (NoSuchRepositoryException nsre) {
-			throw new RepositoryException(nsre.getMessage());
+			throw new InvalidRepositoryIdException(nsre.getMessage());
 		}
 	}
 
@@ -148,26 +115,53 @@ public class RepositoryLocalServiceImpl
 		for (Repository repository : repositories) {
 			deleteRepository(repository.getRepositoryId());
 		}
-
-		dlFolderLocalService.deleteAll(groupId);
 	}
 
 	@Override
-	public Repository deleteRepository(long repositoryId) {
+	public Repository deleteRepository(long repositoryId)
+		throws PortalException {
+
 		Repository repository = repositoryPersistence.fetchByPrimaryKey(
 			repositoryId);
 
-		if (repository != null) {
-			repositoryLocalService.deleteRepository(repository);
+		if (repository == null) {
+			return null;
 		}
 
-		return repository;
+		try {
+			LocalRepository localRepository =
+				repositoryProvider.getLocalRepository(repositoryId);
+
+			if (localRepository.isCapabilityProvided(
+					RepositoryEventTriggerCapability.class)) {
+
+				RepositoryEventTriggerCapability
+					repositoryEventTriggerCapability =
+						localRepository.getCapability(
+							RepositoryEventTriggerCapability.class);
+
+				repositoryEventTriggerCapability.trigger(
+					RepositoryEventType.Delete.class, LocalRepository.class,
+					localRepository);
+			}
+		}
+		catch (UndeployedExternalRepositoryException uere) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Repository deletion events for this repository will not " +
+						"be triggered",
+					uere);
+			}
+		}
+
+		return repositoryLocalService.deleteRepository(repository);
 	}
 
 	@Override
 	@SystemEvent(
 		action = SystemEventConstants.ACTION_SKIP,
-		type = SystemEventConstants.TYPE_DELETE)
+		type = SystemEventConstants.TYPE_DELETE
+	)
 	public Repository deleteRepository(Repository repository) {
 		expandoValueLocalService.deleteValues(
 			Repository.class.getName(), repository.getRepositoryId());
@@ -200,74 +194,8 @@ public class RepositoryLocalServiceImpl
 	}
 
 	@Override
-	public List<LocalRepository> getGroupLocalRepositoryImpl(long groupId)
-		throws PortalException {
-
-		List<Repository> repositories = repositoryPersistence.findByGroupId(
-			groupId);
-
-		List<LocalRepository> localRepositories =
-			new ArrayList<LocalRepository>(repositories.size() + 1);
-
-		for (Repository repository : repositories) {
-			localRepositories.add(
-				getLocalRepositoryImpl(repository.getRepositoryId()));
-		}
-
-		localRepositories.add(getLocalRepositoryImpl(groupId));
-
-		return localRepositories;
-	}
-
-	@Override
-	public LocalRepository getLocalRepositoryImpl(long repositoryId)
-		throws PortalException {
-
-		LocalRepository localRepositoryImpl =
-			_localRepositoriesByRepositoryId.get(repositoryId);
-
-		if (localRepositoryImpl != null) {
-			return localRepositoryImpl;
-		}
-
-		localRepositoryImpl = LocalRepositoryFactoryUtil.create(repositoryId);
-
-		checkRepository(repositoryId);
-
-		_localRepositoriesByRepositoryId.put(repositoryId, localRepositoryImpl);
-
-		return localRepositoryImpl;
-	}
-
-	@Override
-	public LocalRepository getLocalRepositoryImpl(
-			long folderId, long fileEntryId, long fileVersionId)
-		throws PortalException {
-
-		long repositoryEntryId = RepositoryUtil.getRepositoryEntryId(
-			folderId, fileEntryId, fileVersionId);
-
-		LocalRepository localRepositoryImpl =
-			_localRepositoriesByRepositoryEntryId.get(repositoryEntryId);
-
-		if (localRepositoryImpl != null) {
-			return localRepositoryImpl;
-		}
-
-		localRepositoryImpl = LocalRepositoryFactoryUtil.create(
-			folderId, fileEntryId, fileVersionId);
-
-		checkRepository(localRepositoryImpl.getRepositoryId());
-
-		_localRepositoriesByRepositoryEntryId.put(
-			repositoryEntryId, localRepositoryImpl);
-
-		return localRepositoryImpl;
-	}
-
-	@Override
-	public String getRegistryName() {
-		return RepositoryLocalServiceImpl.class.getName();
+	public List<Repository> getGroupRepositories(long groupId) {
+		return repositoryPersistence.findByGroupId(groupId);
 	}
 
 	@Override
@@ -285,52 +213,6 @@ public class RepositoryLocalServiceImpl
 	}
 
 	@Override
-	public com.liferay.portal.kernel.repository.Repository getRepositoryImpl(
-			long repositoryId)
-		throws PortalException {
-
-		com.liferay.portal.kernel.repository.Repository repositoryImpl =
-			_repositoriesByRepositoryId.get(repositoryId);
-
-		if (repositoryImpl != null) {
-			return repositoryImpl;
-		}
-
-		repositoryImpl = RepositoryFactoryUtil.create(repositoryId);
-
-		checkRepository(repositoryId);
-
-		_repositoriesByRepositoryId.put(repositoryId, repositoryImpl);
-
-		return repositoryImpl;
-	}
-
-	@Override
-	public com.liferay.portal.kernel.repository.Repository getRepositoryImpl(
-			long folderId, long fileEntryId, long fileVersionId)
-		throws PortalException {
-
-		long repositoryEntryId = RepositoryUtil.getRepositoryEntryId(
-			folderId, fileEntryId, fileVersionId);
-
-		com.liferay.portal.kernel.repository.Repository repositoryImpl =
-			_repositoriesByEntryId.get(repositoryEntryId);
-
-		if (repositoryImpl != null) {
-			return repositoryImpl;
-		}
-
-		repositoryImpl = RepositoryFactoryUtil.create(
-			folderId, fileEntryId, fileVersionId);
-
-		checkRepository(repositoryImpl.getRepositoryId());
-
-		_repositoriesByEntryId.put(repositoryEntryId, repositoryImpl);
-
-		return repositoryImpl;
-	}
-
-	@Override
 	public UnicodeProperties getTypeSettingsProperties(long repositoryId)
 		throws PortalException {
 
@@ -341,24 +223,13 @@ public class RepositoryLocalServiceImpl
 	}
 
 	@Override
-	public void invalidate() {
-		_localRepositoriesByRepositoryEntryId.clear();
-		_localRepositoriesByRepositoryId.clear();
-		_repositoriesByEntryId.clear();
-		_repositoriesByRepositoryId.clear();
-	}
-
-	@Override
 	public void updateRepository(
 			long repositoryId, String name, String description)
 		throws PortalException {
 
-		Date now = new Date();
-
 		Repository repository = repositoryPersistence.findByPrimaryKey(
 			repositoryId);
 
-		repository.setModifiedDate(now);
 		repository.setName(name);
 		repository.setDescription(description);
 
@@ -367,11 +238,23 @@ public class RepositoryLocalServiceImpl
 		DLFolder dlFolder = dlFolderPersistence.findByPrimaryKey(
 			repository.getDlFolderId());
 
-		dlFolder.setModifiedDate(now);
 		dlFolder.setName(name);
 		dlFolder.setDescription(description);
 
 		dlFolderPersistence.update(dlFolder);
+	}
+
+	@Override
+	public void updateRepository(
+			long repositoryId, UnicodeProperties typeSettingsProperties)
+		throws PortalException {
+
+		Repository repository = repositoryPersistence.findByPrimaryKey(
+			repositoryId);
+
+		repository.setTypeSettingsProperties(typeSettingsProperties);
+
+		repositoryPersistence.update(repository);
 	}
 
 	protected long getDLFolderId(
@@ -391,18 +274,10 @@ public class RepositoryLocalServiceImpl
 		return dlFolder.getFolderId();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
-		RepositoryLocalServiceImpl.class);
+	@BeanReference(type = RepositoryProvider.class)
+	protected RepositoryProvider repositoryProvider;
 
-	private Map<Long, LocalRepository> _localRepositoriesByRepositoryEntryId =
-		new ConcurrentHashMap<Long, LocalRepository>();
-	private Map<Long, LocalRepository> _localRepositoriesByRepositoryId =
-		new ConcurrentHashMap<Long, LocalRepository>();
-	private Map<Long, com.liferay.portal.kernel.repository.Repository>
-		_repositoriesByEntryId = new ConcurrentHashMap
-			<Long, com.liferay.portal.kernel.repository.Repository>();
-	private Map<Long, com.liferay.portal.kernel.repository.Repository>
-		_repositoriesByRepositoryId = new ConcurrentHashMap
-			<Long, com.liferay.portal.kernel.repository.Repository>();
+	private static final Log _log = LogFactoryUtil.getLog(
+		RepositoryLocalServiceImpl.class);
 
 }

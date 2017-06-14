@@ -14,12 +14,16 @@
 
 package com.liferay.portal.security.membershippolicy;
 
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.User;
-import com.liferay.portal.test.DeleteAfterTestRun;
-import com.liferay.portal.util.test.GroupTestUtil;
-import com.liferay.portal.util.test.RandomTestUtil;
-import com.liferay.portal.util.test.UserTestUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.registry.ServiceRegistration;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -64,6 +68,14 @@ public abstract class BaseMembershipPolicyTestCase {
 
 	@After
 	public void tearDown() throws Exception {
+		for (ServiceRegistration<?> serviceRegistration :
+				serviceRegistrations) {
+
+			serviceRegistration.unregister();
+		}
+
+		serviceRegistrations.clear();
+
 		_propagateMembership = false;
 		_propagateRoles = false;
 		_userIds = new long[2];
@@ -71,8 +83,7 @@ public abstract class BaseMembershipPolicyTestCase {
 	}
 
 	protected long[] addUsers() throws Exception {
-		User user1 = UserTestUtil.addUser(
-			RandomTestUtil.randomString(), group.getGroupId());
+		User user1 = UserTestUtil.addUser(group.getGroupId());
 
 		_userIds[0] = user1.getUserId();
 
@@ -86,6 +97,9 @@ public abstract class BaseMembershipPolicyTestCase {
 
 	@DeleteAfterTestRun
 	protected Group group;
+
+	protected Set<ServiceRegistration<?>> serviceRegistrations =
+		new HashSet<>();
 
 	private static boolean _propagateMembership;
 	private static boolean _propagateRoles;

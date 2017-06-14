@@ -14,9 +14,9 @@
 
 package com.liferay.portal.spring.aop;
 
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
 
@@ -25,9 +25,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+
+import org.springframework.aop.TargetSource;
+import org.springframework.aop.framework.AdvisedSupport;
 
 /**
  * @author Shuyang Zhou
@@ -35,17 +39,35 @@ import org.aopalliance.intercept.MethodInvocation;
 public class ServiceBeanMethodInvocation
 	implements MethodInvocation, Serializable {
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link
+	 *             #ServiceBeanMethodInvocation(Object, Method, Object[])}
+	 */
+	@Deprecated
 	public ServiceBeanMethodInvocation(
 		Object target, Class<?> targetClass, Method method,
 		Object[] arguments) {
 
+		this(target, method, arguments);
+	}
+
+	public ServiceBeanMethodInvocation(
+		Object target, Method method, Object[] arguments) {
+
 		_target = target;
-		_targetClass = targetClass;
 		_method = method;
 		_arguments = arguments;
 
 		if (!_method.isAccessible()) {
 			_method.setAccessible(true);
+		}
+
+		if (_method.getDeclaringClass() == Object.class) {
+			String methodName = _method.getName();
+
+			if (methodName.equals("equals")) {
+				_equalsMethod = true;
+			}
 		}
 	}
 
@@ -62,7 +84,7 @@ public class ServiceBeanMethodInvocation
 		ServiceBeanMethodInvocation serviceBeanMethodInvocation =
 			(ServiceBeanMethodInvocation)obj;
 
-		if (Validator.equals(_method, serviceBeanMethodInvocation._method)) {
+		if (Objects.equals(_method, serviceBeanMethodInvocation._method)) {
 			return true;
 		}
 
@@ -85,7 +107,7 @@ public class ServiceBeanMethodInvocation
 	}
 
 	public Class<?> getTargetClass() {
-		return _targetClass;
+		return _target.getClass();
 	}
 
 	@Override
@@ -102,6 +124,10 @@ public class ServiceBeanMethodInvocation
 		return _hashCode;
 	}
 
+	public void mark() {
+		_markIndex = _index;
+	}
+
 	@Override
 	public Object proceed() throws Throwable {
 		if (_index < _methodInterceptors.size()) {
@@ -109,6 +135,28 @@ public class ServiceBeanMethodInvocation
 				_index++);
 
 			return methodInterceptor.invoke(this);
+		}
+
+		if (_equalsMethod) {
+			Object argument = _arguments[0];
+
+			if (argument == null) {
+				return false;
+			}
+
+			if (ProxyUtil.isProxyClass(argument.getClass())) {
+				AdvisedSupport advisedSupport =
+					ServiceBeanAopProxy.getAdvisedSupport(argument);
+
+				if (advisedSupport != null) {
+					TargetSource targetSource =
+						advisedSupport.getTargetSource();
+
+					argument = targetSource.getTarget();
+				}
+			}
+
+			return _target.equals(argument);
 		}
 
 		try {
@@ -119,16 +167,25 @@ public class ServiceBeanMethodInvocation
 		}
 	}
 
+	public void reset() {
+		_index = _markIndex;
+	}
+
 	public void setMethodInterceptors(
 		List<MethodInterceptor> methodInterceptors) {
 
 		_methodInterceptors = methodInterceptors;
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, with no direct replacement
+	 */
+	@Deprecated
 	public ServiceBeanMethodInvocation toCacheKeyModel() {
 		ServiceBeanMethodInvocation serviceBeanMethodInvocation =
-			new ServiceBeanMethodInvocation(null, null, _method, null);
+			new ServiceBeanMethodInvocation(null, _method, null);
 
+		serviceBeanMethodInvocation._equalsMethod = _equalsMethod;
 		serviceBeanMethodInvocation._hashCode = _hashCode;
 
 		return serviceBeanMethodInvocation;
@@ -157,30 +214,34 @@ public class ServiceBeanMethodInvocation
 
 			sb.append(parameterType.getName());
 
-			if ((i + 1) < parameterTypes.length) {
-				sb.append(StringPool.COMMA);
-			}
+			sb.append(StringPool.COMMA);
+		}
+
+		if (parameterTypes.length > 0) {
+			sb.setIndex(sb.index() - 1);
 		}
 
 		sb.append(StringPool.CLOSE_PARENTHESIS);
 
-		if (_targetClass != null) {
-			sb.append(StringPool.AT);
-			sb.append(_targetClass.getName());
-		}
+		sb.append(StringPool.AT);
+
+		Class<?> targetClass = _target.getClass();
+
+		sb.append(targetClass.getName());
 
 		_toString = sb.toString();
 
 		return _toString;
 	}
 
-	private Object[] _arguments;
+	private final Object[] _arguments;
+	private boolean _equalsMethod;
 	private int _hashCode;
 	private int _index;
-	private Method _method;
+	private int _markIndex;
+	private final Method _method;
 	private List<MethodInterceptor> _methodInterceptors;
-	private Object _target;
-	private Class<?> _targetClass;
+	private final Object _target;
 	private String _toString;
 
 }

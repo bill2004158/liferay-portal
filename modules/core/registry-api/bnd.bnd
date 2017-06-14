@@ -1,13 +1,9 @@
-Bundle-Name: Liferay Portal Registry API
-Bundle-Version: ${plugin.full.version}
+Bundle-Name: Liferay Registry API
+Bundle-SymbolicName: com.liferay.registry.api
+Bundle-Version: 1.2.0
 Export-Package:\
 	com.liferay.registry,\
 	com.liferay.registry.collections,\
+	com.liferay.registry.dependency,\
 	com.liferay.registry.util
-Include-Resource:\
-	classes,\
-	@lib/aQute.bnd.jar!/aQute/lib/filter/Filter.class
-Import-Package:\
-	com.liferay.registry,\
-	com.liferay.registry.collections,\
-	com.liferay.registry.util
+-includeresource: @biz.aQute.bndlib-[0-9]*.jar!/aQute/lib/filter/*

@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.trash.model.impl;
 
-import com.liferay.portlet.trash.model.TrashEntry;
-import com.liferay.portlet.trash.service.TrashEntryLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.trash.kernel.model.TrashEntry;
+import com.liferay.trash.kernel.service.TrashEntryLocalServiceUtil;
 
 /**
  * The extended model base implementation for the TrashEntry service. Represents a row in the &quot;TrashEntry&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.trash.service.TrashEntryLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see TrashEntryImpl
- * @see com.liferay.portlet.trash.model.TrashEntry
+ * @see TrashEntry
  * @generated
  */
+@ProviderType
 public abstract class TrashEntryBaseImpl extends TrashEntryModelImpl
 	implements TrashEntry {
 	/*

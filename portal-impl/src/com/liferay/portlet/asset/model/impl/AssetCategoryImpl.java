@@ -14,16 +14,17 @@
 
 package com.liferay.portlet.asset.model.impl;
 
+import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
+import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portlet.asset.model.AssetCategory;
-import com.liferay.portlet.asset.model.AssetVocabulary;
-import com.liferay.portlet.asset.service.AssetCategoryLocalServiceUtil;
-import com.liferay.portlet.asset.service.AssetVocabularyLocalServiceUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,12 +33,9 @@ import java.util.Locale;
  */
 public class AssetCategoryImpl extends AssetCategoryBaseImpl {
 
-	public AssetCategoryImpl() {
-	}
-
 	@Override
 	public List<AssetCategory> getAncestors() throws PortalException {
-		List<AssetCategory> categories = new ArrayList<AssetCategory>();
+		List<AssetCategory> categories = new ArrayList<>();
 
 		AssetCategory category = this;
 
@@ -52,7 +50,20 @@ public class AssetCategoryImpl extends AssetCategoryBaseImpl {
 	}
 
 	@Override
+	public AssetCategory getParentCategory() {
+		return AssetCategoryLocalServiceUtil.fetchCategory(
+			getParentCategoryId());
+	}
+
+	@Override
 	public String getPath(Locale locale) throws PortalException {
+		return getPath(locale, false);
+	}
+
+	@Override
+	public String getPath(Locale locale, boolean reverse)
+		throws PortalException {
+
 		List<AssetCategory> categories = getAncestors();
 
 		StringBundler sb = new StringBundler((categories.size() * 4) + 1);
@@ -61,6 +72,10 @@ public class AssetCategoryImpl extends AssetCategoryBaseImpl {
 			AssetVocabularyLocalServiceUtil.getVocabulary(getVocabularyId());
 
 		sb.append(vocabulary.getTitle(locale));
+
+		if (reverse) {
+			Collections.reverse(categories);
+		}
 
 		for (AssetCategory category : categories) {
 			sb.append(StringPool.SPACE);

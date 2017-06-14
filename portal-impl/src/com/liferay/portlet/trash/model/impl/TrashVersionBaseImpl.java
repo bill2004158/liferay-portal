@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.trash.model.impl;
 
-import com.liferay.portlet.trash.model.TrashVersion;
-import com.liferay.portlet.trash.service.TrashVersionLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.trash.kernel.model.TrashVersion;
+import com.liferay.trash.kernel.service.TrashVersionLocalServiceUtil;
 
 /**
  * The extended model base implementation for the TrashVersion service. Represents a row in the &quot;TrashVersion&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.trash.service.TrashVersionLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see TrashVersionImpl
- * @see com.liferay.portlet.trash.model.TrashVersion
+ * @see TrashVersion
  * @generated
  */
+@ProviderType
 public abstract class TrashVersionBaseImpl extends TrashVersionModelImpl
 	implements TrashVersion {
 	/*

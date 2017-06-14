@@ -34,7 +34,6 @@ public class MethodInterceptorInvocationHandler implements InvocationHandler {
 		}
 
 		_target = target;
-		_targetClass = target.getClass();
 
 		if (methodInterceptors == null) {
 			throw new NullPointerException("Method interceptors is null");
@@ -59,16 +58,14 @@ public class MethodInterceptorInvocationHandler implements InvocationHandler {
 		throws Throwable {
 
 		ServiceBeanMethodInvocation serviceBeanMethodInvocation =
-			new ServiceBeanMethodInvocation(
-				_target, _targetClass, method, arguments);
+			new ServiceBeanMethodInvocation(_target, method, arguments);
 
 		serviceBeanMethodInvocation.setMethodInterceptors(_methodInterceptors);
 
 		return serviceBeanMethodInvocation.proceed();
 	}
 
-	private List<MethodInterceptor> _methodInterceptors;
-	private Object _target;
-	private Class<?> _targetClass;
+	private final List<MethodInterceptor> _methodInterceptors;
+	private final Object _target;
 
 }

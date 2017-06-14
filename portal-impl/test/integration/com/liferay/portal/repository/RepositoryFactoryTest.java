@@ -14,41 +14,30 @@
 
 package com.liferay.portal.repository;
 
-import com.liferay.portal.NoSuchRepositoryEntryException;
+import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.repository.RepositoryFactoryUtil;
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.transaction.Transactional;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.security.auth.PrincipalException;
-import com.liferay.portal.security.permission.AlwaysDenyingPermissionChecker;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.security.permission.PermissionThreadLocal;
-import com.liferay.portal.test.DeleteAfterTestRun;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.ResetDatabaseExecutionTestListener;
-import com.liferay.portal.util.test.GroupTestUtil;
-import com.liferay.portal.util.test.RandomTestUtil;
-import com.liferay.portlet.documentlibrary.model.DLFileEntry;
-import com.liferay.portlet.documentlibrary.model.DLFileVersion;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portlet.documentlibrary.util.test.DLTestUtil;
 
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Adolfo Pérez
  */
-@ExecutionTestListeners(
-	listeners = {
-		MainServletExecutionTestListener.class,
-		ResetDatabaseExecutionTestListener.class,
-	})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
-@Transactional
 public class RepositoryFactoryTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new LiferayIntegrationTestRule();
 
 	@Before
 	public void setUp() throws Exception {
@@ -56,55 +45,21 @@ public class RepositoryFactoryTest {
 	}
 
 	@Test
-	public void testCreateRepositoryFromExistingFileEntryId() throws Exception {
-		DLFolder dlFolder = DLTestUtil.addDLFolder(_group.getGroupId());
-
-		DLFileEntry dlFileEntry = DLTestUtil.addDLFileEntry(
-			dlFolder.getFolderId());
-
-		RepositoryFactoryUtil.create(0, dlFileEntry.getFileEntryId(), 0);
-	}
-
-	@Test
-	public void testCreateRepositoryFromExistingFileVersionId()
+	public void testCreateLocalRepositoryFromExistingRepositoryId()
 		throws Exception {
 
 		DLFolder dlFolder = DLTestUtil.addDLFolder(_group.getGroupId());
 
-		DLFileEntry dlFileEntry = DLTestUtil.addDLFileEntry(
-			dlFolder.getFolderId());
-
-		DLFileVersion dlFileVersion = dlFileEntry.getLatestFileVersion(true);
-
-		RepositoryFactoryUtil.create(0, 0, dlFileVersion.getFileVersionId());
+		RepositoryFactoryUtil.createLocalRepository(dlFolder.getRepositoryId());
 	}
 
 	@Test
-	public void testCreateRepositoryFromExistingFolderId() throws Exception {
-		DLFolder dlFolder = DLTestUtil.addDLFolder(_group.getGroupId());
-
-		RepositoryFactoryUtil.create(dlFolder.getFolderId(), 0, 0);
-	}
-
-	@Test(expected = PrincipalException.class)
-	public void testCreateRepositoryFromExistingFolderWithoutPermissions()
+	public void testCreateLocalRepositoryFromNonexistentRepositoryId()
 		throws Exception {
 
-		DLFolder dlFolder = DLTestUtil.addDLFolder(_group.getGroupId());
+		long repositoryId = RandomTestUtil.nextLong();
 
-		PermissionChecker originalPermissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		try {
-			PermissionThreadLocal.setPermissionChecker(
-				new AlwaysDenyingPermissionChecker());
-
-			RepositoryFactoryUtil.create(dlFolder.getFolderId(), 0, 0);
-		}
-		finally {
-			PermissionThreadLocal.setPermissionChecker(
-				originalPermissionChecker);
-		}
+		RepositoryFactoryUtil.createLocalRepository(repositoryId);
 	}
 
 	@Test
@@ -113,32 +68,7 @@ public class RepositoryFactoryTest {
 
 		DLFolder dlFolder = DLTestUtil.addDLFolder(_group.getGroupId());
 
-		RepositoryFactoryUtil.create(dlFolder.getRepositoryId());
-	}
-
-	@Test(expected = NoSuchRepositoryEntryException.class)
-	public void testCreateRepositoryFromNonexistentFileEntryId()
-		throws Exception {
-
-		long fileEntryId = RandomTestUtil.randomLong();
-
-		RepositoryFactoryUtil.create(0, fileEntryId, 0);
-	}
-
-	@Test(expected = NoSuchRepositoryEntryException.class)
-	public void testCreateRepositoryFromNonexistentFileVersionId()
-		throws Exception {
-
-		long fileVersionId = RandomTestUtil.randomLong();
-
-		RepositoryFactoryUtil.create(0, 0, fileVersionId);
-	}
-
-	@Test(expected = NoSuchRepositoryEntryException.class)
-	public void testCreateRepositoryFromNonexistentFolderId() throws Exception {
-		long folderId = RandomTestUtil.randomLong();
-
-		RepositoryFactoryUtil.create(folderId, 0, 0);
+		RepositoryFactoryUtil.createRepository(dlFolder.getRepositoryId());
 	}
 
 	@Test
@@ -147,7 +77,7 @@ public class RepositoryFactoryTest {
 
 		long repositoryId = RandomTestUtil.randomLong();
 
-		RepositoryFactoryUtil.create(repositoryId);
+		RepositoryFactoryUtil.createRepository(repositoryId);
 	}
 
 	@DeleteAfterTestRun

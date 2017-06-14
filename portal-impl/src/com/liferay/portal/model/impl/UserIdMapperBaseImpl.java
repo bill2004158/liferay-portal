@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.UserIdMapper;
-import com.liferay.portal.service.UserIdMapperLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.UserIdMapper;
+import com.liferay.portal.kernel.service.UserIdMapperLocalServiceUtil;
 
 /**
  * The extended model base implementation for the UserIdMapper service. Represents a row in the &quot;UserIdMapper&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.UserIdMapperLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see UserIdMapperImpl
- * @see com.liferay.portal.model.UserIdMapper
+ * @see UserIdMapper
  * @generated
  */
+@ProviderType
 public abstract class UserIdMapperBaseImpl extends UserIdMapperModelImpl
 	implements UserIdMapper {
 	/*

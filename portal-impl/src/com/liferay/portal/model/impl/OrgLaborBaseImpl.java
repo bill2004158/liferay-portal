@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.OrgLabor;
-import com.liferay.portal.service.OrgLaborLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.OrgLabor;
+import com.liferay.portal.kernel.service.OrgLaborLocalServiceUtil;
 
 /**
  * The extended model base implementation for the OrgLabor service. Represents a row in the &quot;OrgLabor&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.OrgLaborLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see OrgLaborImpl
- * @see com.liferay.portal.model.OrgLabor
+ * @see OrgLabor
  * @generated
  */
+@ProviderType
 public abstract class OrgLaborBaseImpl extends OrgLaborModelImpl
 	implements OrgLabor {
 	/*

@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
-import com.liferay.portlet.documentlibrary.model.DLFileVersion;
-import com.liferay.portlet.documentlibrary.service.DLFileVersionLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.document.library.kernel.model.DLFileVersion;
+import com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil;
 
 /**
  * The extended model base implementation for the DLFileVersion service. Represents a row in the &quot;DLFileVersion&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.documentlibrary.service.DLFileVersionLocalServiceUtil
  *
  * @author Brian Wing Shun Chan
  * @see DLFileVersionImpl
- * @see com.liferay.portlet.documentlibrary.model.DLFileVersion
+ * @see DLFileVersion
  * @generated
  */
+@ProviderType
 public abstract class DLFileVersionBaseImpl extends DLFileVersionModelImpl
 	implements DLFileVersion {
 	/*

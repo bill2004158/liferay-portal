@@ -14,97 +14,71 @@
 
 package com.liferay.portal.repository;
 
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.repository.BaseRepository;
+import com.liferay.portal.kernel.repository.LocalRepository;
 import com.liferay.portal.kernel.repository.Repository;
 import com.liferay.portal.kernel.repository.RepositoryFactory;
+import com.liferay.portal.kernel.repository.UndeployedExternalRepositoryException;
+import com.liferay.portal.kernel.service.RepositoryLocalService;
 import com.liferay.portal.repository.liferayrepository.LiferayRepository;
-import com.liferay.portal.service.RepositoryLocalService;
-import com.liferay.portlet.documentlibrary.model.DLFileEntry;
-import com.liferay.portlet.documentlibrary.model.DLFileVersion;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
-import com.liferay.portlet.documentlibrary.service.DLFileEntryService;
-import com.liferay.portlet.documentlibrary.service.DLFileVersionService;
-import com.liferay.portlet.documentlibrary.service.DLFolderService;
+import com.liferay.portal.repository.registry.RepositoryClassDefinition;
+import com.liferay.portal.repository.registry.RepositoryClassDefinitionCatalog;
 
 /**
  * @author Adolfo Pérez
  */
-public class RepositoryFactoryImpl extends BaseRepositoryFactory<Repository>
-	implements RepositoryFactory {
+public class RepositoryFactoryImpl implements RepositoryFactory {
 
 	@Override
-	protected BaseRepository createExternalRepository(
-			long repositoryId, long classNameId)
+	public LocalRepository createLocalRepository(long repositoryId)
 		throws PortalException {
 
-		return createExternalRepositoryImpl(repositoryId, classNameId);
+		String className = getRepositoryClassName(repositoryId);
+
+		RepositoryFactory repositoryFactory = getRepositoryFactory(className);
+
+		return repositoryFactory.createLocalRepository(repositoryId);
 	}
 
 	@Override
-	protected Repository createExternalRepository(
-			long folderId, long fileEntryId, long fileVersionId)
+	public Repository createRepository(long repositoryId)
 		throws PortalException {
 
-		long repositoryId = getRepositoryId(
-			folderId, fileEntryId, fileVersionId);
+		String className = getRepositoryClassName(repositoryId);
 
-		return create(repositoryId);
+		RepositoryFactory repositoryFactory = getRepositoryFactory(className);
+
+		return repositoryFactory.createRepository(repositoryId);
 	}
 
-	@Override
-	protected LiferayRepository createLiferayRepositoryInstance(
-		long groupId, long repositoryId, long dlFolderId) {
+	protected String getRepositoryClassName(long repositoryId) {
+		com.liferay.portal.kernel.model.Repository repository =
+			_repositoryLocalService.fetchRepository(repositoryId);
 
-		return new LiferayRepository(
-			getRepositoryLocalService(), getRepositoryService(),
-			getDlAppHelperLocalService(), getDlFileEntryLocalService(),
-			getDlFileEntryService(), getDlFileEntryTypeLocalService(),
-			getDlFileVersionLocalService(), getDlFileVersionService(),
-			getDlFolderLocalService(), getDlFolderService(),
-			getResourceLocalService(), groupId, repositoryId, dlFolderId);
+		if (repository != null) {
+			return repository.getClassName();
+		}
+
+		return LiferayRepository.class.getName();
 	}
 
-	@Override
-	protected long getFileEntryRepositoryId(long fileEntryId)
-		throws PortalException {
+	protected RepositoryFactory getRepositoryFactory(String className) {
+		RepositoryClassDefinition repositoryDefinition =
+			_repositoryClassDefinitionCatalog.getRepositoryClassDefinition(
+				className);
 
-		DLFileEntryService dlFileEntryService = getDlFileEntryService();
+		if (repositoryDefinition == null) {
+			throw new UndeployedExternalRepositoryException(className);
+		}
 
-		DLFileEntry dlFileEntry = dlFileEntryService.getFileEntry(fileEntryId);
-
-		return dlFileEntry.getRepositoryId();
+		return repositoryDefinition;
 	}
 
-	@Override
-	protected long getFileVersionRepositoryId(long fileVersionId)
-		throws PortalException {
+	@BeanReference(type = RepositoryClassDefinitionCatalog.class)
+	private RepositoryClassDefinitionCatalog _repositoryClassDefinitionCatalog;
 
-		DLFileVersionService dlFileVersionService = getDlFileVersionService();
-
-		DLFileVersion dlFileVersion = dlFileVersionService.getFileVersion(
-			fileVersionId);
-
-		return dlFileVersion.getRepositoryId();
-	}
-
-	@Override
-	protected long getFolderRepositoryId(long folderId) throws PortalException {
-		DLFolderService dlFolderService = getDlFolderService();
-
-		DLFolder dlFolder = dlFolderService.getFolder(folderId);
-
-		return dlFolder.getRepositoryId();
-	}
-
-	@Override
-	protected com.liferay.portal.model.Repository getRepository(
-		long repositoryId) {
-
-		RepositoryLocalService repositoryLocalService =
-			getRepositoryLocalService();
-
-		return repositoryLocalService.fetchRepository(repositoryId);
-	}
+	@BeanReference(type = RepositoryLocalService.class)
+	private RepositoryLocalService _repositoryLocalService;
 
 }

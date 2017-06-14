@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.social.model.impl;
 
-import com.liferay.portlet.social.model.SocialRequest;
-import com.liferay.portlet.social.service.SocialRequestLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.social.kernel.model.SocialRequest;
+import com.liferay.social.kernel.service.SocialRequestLocalServiceUtil;
 
 /**
  * The extended model base implementation for the SocialRequest service. Represents a row in the &quot;SocialRequest&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.social.service.SocialRequestLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see SocialRequestImpl
- * @see com.liferay.portlet.social.model.SocialRequest
+ * @see SocialRequest
  * @generated
  */
+@ProviderType
 public abstract class SocialRequestBaseImpl extends SocialRequestModelImpl
 	implements SocialRequest {
 	/*

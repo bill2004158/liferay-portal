@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.MembershipRequest;
-import com.liferay.portal.service.MembershipRequestLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.MembershipRequest;
+import com.liferay.portal.kernel.service.MembershipRequestLocalServiceUtil;
 
 /**
  * The extended model base implementation for the MembershipRequest service. Represents a row in the &quot;MembershipRequest&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.MembershipRequestLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see MembershipRequestImpl
- * @see com.liferay.portal.model.MembershipRequest
+ * @see MembershipRequest
  * @generated
  */
+@ProviderType
 public abstract class MembershipRequestBaseImpl
 	extends MembershipRequestModelImpl implements MembershipRequest {
 	/*

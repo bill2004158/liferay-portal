@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.ServiceComponent;
-import com.liferay.portal.service.ServiceComponentLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.ServiceComponent;
+import com.liferay.portal.kernel.service.ServiceComponentLocalServiceUtil;
 
 /**
  * The extended model base implementation for the ServiceComponent service. Represents a row in the &quot;ServiceComponent&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.ServiceComponentLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ServiceComponentImpl
- * @see com.liferay.portal.model.ServiceComponent
+ * @see ServiceComponent
  * @generated
  */
+@ProviderType
 public abstract class ServiceComponentBaseImpl extends ServiceComponentModelImpl
 	implements ServiceComponent {
 	/*

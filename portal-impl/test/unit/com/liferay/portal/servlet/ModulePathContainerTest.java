@@ -14,14 +14,14 @@
 
 package com.liferay.portal.servlet;
 
-import com.liferay.portal.cache.SingleVMPoolImpl;
-import com.liferay.portal.cache.memory.MemoryPortalCacheManager;
-import com.liferay.portal.kernel.cache.SingleVMPoolUtil;
+import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.util.PortletKeys;
+import com.liferay.portal.tools.ToolDependencies;
+import com.liferay.portal.util.HttpImpl;
 
-import java.io.Serializable;
-
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,19 +34,16 @@ public class ModulePathContainerTest {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		MemoryPortalCacheManager<Serializable, Serializable>
-			memoryPortalCacheManager =
-				new MemoryPortalCacheManager<Serializable, Serializable>();
+		ToolDependencies.wireCaches();
 
-		memoryPortalCacheManager.afterPropertiesSet();
+		_http = HttpUtil.getHttp();
 
-		SingleVMPoolImpl singleVMPoolImpl = new SingleVMPoolImpl();
+		_httpUtil.setHttp(new HttpImpl());
+	}
 
-		singleVMPoolImpl.setPortalCacheManager(memoryPortalCacheManager);
-
-		SingleVMPoolUtil singleVMPoolUtil = new SingleVMPoolUtil();
-
-		singleVMPoolUtil.setSingleVMPool(singleVMPoolImpl);
+	@AfterClass
+	public static void tearDownClass() {
+		_httpUtil.setHttp(_http);
 	}
 
 	@Test
@@ -61,24 +58,25 @@ public class ModulePathContainerTest {
 
 	@Test
 	public void testModulePathWithPortletId() {
-		String modulePath = PortletKeys.ACTIVITIES + ":/js/javascript.js";
+		String modulePath = PortletKeys.PORTAL + ":/js/javascript.js";
 
 		Assert.assertEquals(
-			PortletKeys.ACTIVITIES,
-			ComboServlet.getModulePortletId(modulePath));
+			PortletKeys.PORTAL, ComboServlet.getModulePortletId(modulePath));
 		Assert.assertEquals(
 			"/js/javascript.js", ComboServlet.getResourcePath(modulePath));
 	}
 
 	@Test
 	public void testModulePathWithPortletIdAndNoResourcePath() {
-		String modulePath = PortletKeys.ACTIVITIES + ":";
+		String modulePath = PortletKeys.PORTAL + ":";
 
 		Assert.assertEquals(
-			PortletKeys.ACTIVITIES,
-			ComboServlet.getModulePortletId(modulePath));
+			PortletKeys.PORTAL, ComboServlet.getModulePortletId(modulePath));
 		Assert.assertEquals(
 			StringPool.BLANK, ComboServlet.getResourcePath(modulePath));
 	}
+
+	private static Http _http;
+	private static final HttpUtil _httpUtil = new HttpUtil();
 
 }

@@ -15,8 +15,7 @@
 package com.liferay.portal.jsonwebservice.action;
 
 import com.liferay.portal.json.data.FileData;
-import com.liferay.portal.json.transformer.FlexjsonBeanAnalyzerTransformer;
-import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.json.transformer.BeanAnalyzerTransformer;
 import com.liferay.portal.kernel.javadoc.JavadocManagerUtil;
 import com.liferay.portal.kernel.javadoc.JavadocMethod;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -26,6 +25,7 @@ import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceAction;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceActionMapping;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceActionsManagerUtil;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceNaming;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MethodParameter;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
@@ -33,9 +33,6 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-
-import flexjson.JSONContext;
-import flexjson.PathExpression;
 
 import java.io.File;
 import java.io.Serializable;
@@ -55,20 +52,28 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import jodd.util.ReflectUtil;
 
 /**
  * @author Igor Spasic
+ * @author Raymond Augé
  */
 public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 	public JSONWebServiceDiscoverAction(HttpServletRequest request) {
 		_basePath = request.getServletPath();
 		_baseURL = String.valueOf(request.getRequestURL());
-		_contextPath = ParamUtil.getString(
-			request, "contextPath", request.getContextPath());
+
+		ServletContext servletContext = request.getServletContext();
+
+		_contextName = GetterUtil.getString(
+			ParamUtil.getString(
+				request, "contextName",
+				servletContext.getServletContextName()));
+
 		_jsonWebServiceNaming =
 			JSONWebServiceActionsManagerUtil.getJSONWebServiceNaming();
 	}
@@ -80,9 +85,9 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 	@Override
 	public Object invoke() throws Exception {
-		Map<String, Object> resultsMap = new LinkedHashMap<String, Object>();
+		Map<String, Object> resultsMap = new LinkedHashMap<>();
 
-		resultsMap.put("context", _contextPath);
+		resultsMap.put("contextName", _contextName);
 		resultsMap.put("basePath", _basePath);
 		resultsMap.put("baseURL", _baseURL);
 		resultsMap.put("services", _buildJsonWebServiceActionMappingMaps());
@@ -108,20 +113,17 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 			return jsonSerializer.serializeDeep(_resultsMap);
 		}
 
-		private Map<String, Object> _resultsMap;
+		private final Map<String, Object> _resultsMap;
 
 	}
 
-	private List<Map<String, Object>> _buildJsonWebServiceActionMappingMaps()
-		throws PortalException {
-
+	private List<Map<String, Object>> _buildJsonWebServiceActionMappingMaps() {
 		List<JSONWebServiceActionMapping> jsonWebServiceActionMappings =
 			JSONWebServiceActionsManagerUtil.getJSONWebServiceActionMappings(
-				_contextPath);
+				_contextName);
 
 		List<Map<String, Object>> jsonWebServiceActionMappingMaps =
-			new ArrayList<Map<String, Object>>(
-				jsonWebServiceActionMappings.size());
+			new ArrayList<>(jsonWebServiceActionMappings.size());
 
 		for (JSONWebServiceActionMapping jsonWebServiceActionMapping :
 				jsonWebServiceActionMappings) {
@@ -129,7 +131,7 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 			String path = jsonWebServiceActionMapping.getPath();
 
 			Map<String, Object> jsonWebServiceActionMappingMap =
-				new LinkedHashMap<String, Object>();
+				new LinkedHashMap<>();
 
 			if (jsonWebServiceActionMapping.isDeprecated()) {
 				jsonWebServiceActionMappingMap.put("deprecated", Boolean.TRUE);
@@ -157,23 +159,15 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 			MethodParameter[] methodParameters =
 				jsonWebServiceActionMapping.getMethodParameters();
 
-			List<Map<String, String>> parametersList =
-				new ArrayList<Map<String, String>>(methodParameters.length);
+			List<Map<String, String>> parametersList = new ArrayList<>(
+				methodParameters.length);
 
 			for (int i = 0; i < methodParameters.length; i++) {
 				MethodParameter methodParameter = methodParameters[i];
 
-				Class<?>[] genericTypes = null;
+				Class<?>[] genericTypes = methodParameter.getGenericTypes();
 
-				try {
-					genericTypes = methodParameter.getGenericTypes();
-				}
-				catch (ClassNotFoundException cnfe) {
-					throw new PortalException(cnfe);
-				}
-
-				Map<String, String> parameterMap =
-					new HashMap<String, String>();
+				Map<String, String> parameterMap = new HashMap<>();
 
 				if (javadocMethod != null) {
 					String parameterComment = javadocMethod.getParameterComment(
@@ -197,8 +191,7 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 			jsonWebServiceActionMappingMap.put("path", path);
 
-			Map<String, String> returnsMap =
-				new LinkedHashMap<String, String>();
+			Map<String, String> returnsMap = new LinkedHashMap<>();
 
 			if (javadocMethod != null) {
 				String returnComment = javadocMethod.getReturnComment();
@@ -226,15 +219,8 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 	private List<Map<String, String>> _buildPropertiesList(Class<?> type) {
 		try {
-			JSONContext jsonContext = JSONContext.get();
-
-			List<PathExpression> pathExpressions =
-				new ArrayList<PathExpression>();
-
-			jsonContext.setPathExpressions(pathExpressions);
-
-			FlexjsonBeanAnalyzerTransformer flexjsonBeanAnalyzerTransformer =
-				new FlexjsonBeanAnalyzerTransformer(pathExpressions) {
+			BeanAnalyzerTransformer beanAnalyzerTransformer =
+				new BeanAnalyzerTransformer(type) {
 
 					@Override
 					protected String getTypeName(Class<?> type) {
@@ -243,9 +229,7 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 				};
 
-			flexjsonBeanAnalyzerTransformer.transform(type);
-
-			return flexjsonBeanAnalyzerTransformer.getPropertiesList();
+			return beanAnalyzerTransformer.collect();
 		}
 		catch (Exception e) {
 			return null;
@@ -253,12 +237,12 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 	}
 
 	private List<Map<String, Object>> _buildTypes() {
-		List<Map<String, Object>> types = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> types = new ArrayList<>();
 
 		for (int i = 0; i < _types.size(); i++) {
 			Class<?> type = _types.get(i);
 
-			Map<String, Object> map = new LinkedHashMap<String, Object>();
+			Map<String, Object> map = new LinkedHashMap<>();
 
 			types.add(map);
 
@@ -339,7 +323,7 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 		else if (type.equals(Object.class) || type.equals(Serializable.class)) {
 			return "map";
 		}
-		else if (ReflectUtil.isSubclass(type, Number.class)) {
+		else if (ReflectUtil.isTypeOf(type, Number.class)) {
 			String typeName = null;
 
 			if (type == Character.class) {
@@ -357,14 +341,12 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 		String typeName = type.getName();
 
-		if ((type == Collection.class) || (type == List.class) ||
-			ReflectUtil.isSubclass(type, List.class)) {
+		if ((type == Collection.class) ||
+			ReflectUtil.isTypeOf(type, List.class)) {
 
 			typeName = "list";
 		}
-		else if ((type == Map.class) ||
-				 ReflectUtil.isSubclass(type, Map.class)) {
-
+		else if (ReflectUtil.isTypeOf(type, Map.class)) {
 			typeName = "map";
 		}
 		else {
@@ -388,7 +370,12 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 				sb.append(StringPool.COMMA);
 			}
 
-			sb.append(_formatType(genericType, null, returnType));
+			if (genericType == null) {
+				sb.append(StringPool.STAR);
+			}
+			else {
+				sb.append(_formatType(genericType, null, returnType));
+			}
 		}
 
 		sb.append(StringPool.GREATER_THAN);
@@ -413,7 +400,7 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 
 		Type[] genericTypes = parameterizedType.getActualTypeArguments();
 
-		Class<?>[] genericReturnTypes = new Class[genericTypes.length];
+		Class<?>[] genericReturnTypes = new Class<?>[genericTypes.length];
 
 		for (int i = 0; i < genericTypes.length; i++) {
 			Type genericType = genericTypes[i];
@@ -438,10 +425,10 @@ public class JSONWebServiceDiscoverAction implements JSONWebServiceAction {
 		return className.concat(StringPool.POUND).concat(method.getName());
 	}
 
-	private String _basePath;
-	private String _baseURL;
-	private String _contextPath;
-	private JSONWebServiceNaming _jsonWebServiceNaming;
-	private List<Class<?>> _types = new ArrayList<Class<?>>();
+	private final String _basePath;
+	private final String _baseURL;
+	private final String _contextName;
+	private final JSONWebServiceNaming _jsonWebServiceNaming;
+	private final List<Class<?>> _types = new ArrayList<>();
 
 }

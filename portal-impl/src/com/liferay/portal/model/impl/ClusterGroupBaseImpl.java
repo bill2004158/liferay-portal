@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.ClusterGroup;
-import com.liferay.portal.service.ClusterGroupLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.ClusterGroup;
+import com.liferay.portal.kernel.service.ClusterGroupLocalServiceUtil;
 
 /**
  * The extended model base implementation for the ClusterGroup service. Represents a row in the &quot;ClusterGroup&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.ClusterGroupLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ClusterGroupImpl
- * @see com.liferay.portal.model.ClusterGroup
+ * @see ClusterGroup
  * @generated
  */
+@ProviderType
 public abstract class ClusterGroupBaseImpl extends ClusterGroupModelImpl
 	implements ClusterGroup {
 	/*

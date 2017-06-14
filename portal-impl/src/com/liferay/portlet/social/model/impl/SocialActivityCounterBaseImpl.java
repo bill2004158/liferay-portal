@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.social.model.impl;
 
-import com.liferay.portlet.social.model.SocialActivityCounter;
-import com.liferay.portlet.social.service.SocialActivityCounterLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.social.kernel.model.SocialActivityCounter;
+import com.liferay.social.kernel.service.SocialActivityCounterLocalServiceUtil;
 
 /**
  * The extended model base implementation for the SocialActivityCounter service. Represents a row in the &quot;SocialActivityCounter&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.social.service.SocialActivityCounterLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see SocialActivityCounterImpl
- * @see com.liferay.portlet.social.model.SocialActivityCounter
+ * @see SocialActivityCounter
  * @generated
  */
+@ProviderType
 public abstract class SocialActivityCounterBaseImpl
 	extends SocialActivityCounterModelImpl implements SocialActivityCounter {
 	/*

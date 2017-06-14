@@ -14,13 +14,18 @@
 
 package com.liferay.portal.bean;
 
-import com.liferay.portal.kernel.memory.EqualityWeakReference;
+import com.liferay.portal.kernel.memory.FinalizeManager;
 import com.liferay.portal.kernel.process.ClassPathUtil;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
-import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJMockingNewClassLoaderJUnitTestRunner;
+import com.liferay.portal.kernel.test.GCUtil;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.kernel.test.rule.NewEnv;
+import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.test.aspects.ReflectionUtilAdvice;
+import com.liferay.portal.test.rule.AdviseWith;
+import com.liferay.portal.test.rule.AspectJNewEnvTestRule;
 
-import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
@@ -32,32 +37,48 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(AspectJMockingNewClassLoaderJUnitTestRunner.class)
 public class ConstantsBeanFactoryImplTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			AspectJNewEnvTestRule.INSTANCE, CodeCoverageAssertor.INSTANCE);
 
 	@AdviseWith(adviceClasses = {ReflectionUtilAdvice.class})
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
 	@Test
-	public void testCreateConstantsBean() {
+	public void testClassInitializationFailure() throws Exception {
+		Throwable throwable = new Throwable();
+
+		ReflectionUtilAdvice.setDeclaredMethodThrowable(throwable);
+
+		try {
+			Class.forName(ConstantsBeanFactoryImpl.class.getName());
+
+			Assert.fail();
+		}
+		catch (ExceptionInInitializerError eiie) {
+			Assert.assertSame(throwable, eiie.getCause());
+		}
+	}
+
+	@NewEnv(type = NewEnv.Type.CLASSLOADER)
+	@Test
+	public void testCreateConstantsBean() throws Exception {
 
 		// Exception on create
 
-		ReflectionUtilAdvice.setThrowException(true);
+		Method defineClassMethod = ReflectionTestUtil.getAndSetFieldValue(
+			ConstantsBeanFactoryImpl.class, "_defineClassMethod", null);
 
 		try {
 			ConstantsBeanFactoryImpl.createConstantsBean(Constants.class);
@@ -67,13 +88,17 @@ public class ConstantsBeanFactoryImplTest {
 		catch (RuntimeException re) {
 			Throwable throwable = re.getCause();
 
-			Assert.assertEquals(Exception.class, throwable.getClass());
-			Assert.assertEquals("Forced Exception", throwable.getMessage());
+			Assert.assertSame(NullPointerException.class, throwable.getClass());
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				ConstantsBeanFactoryImpl.class, "_defineClassMethod",
+				defineClassMethod);
 		}
 
 		// Normal create
 
-		ReflectionUtilAdvice.setThrowException(false);
+		ReflectionUtilAdvice.setDeclaredMethodThrowable(null);
 
 		Object constantsBean = ConstantsBeanFactoryImpl.createConstantsBean(
 			Constants.class);
@@ -87,7 +112,7 @@ public class ConstantsBeanFactoryImplTest {
 
 		Method[] methods = constantsBeanClass.getDeclaredMethods();
 
-		Assert.assertEquals(9, methods.length);
+		Assert.assertEquals(Arrays.toString(methods), 12, methods.length);
 
 		Arrays.sort(
 			methods,
@@ -108,108 +133,167 @@ public class ConstantsBeanFactoryImplTest {
 		Method method = methods[0];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Boolean.TYPE, method.getReturnType());
+		Assert.assertSame(Boolean.TYPE, method.getReturnType());
 		Assert.assertEquals("getBOOLEAN_VALUE", method.getName());
 
 		Class<?>[] parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public byte getBYTE_VALUE();
 
 		method = methods[1];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Byte.TYPE, method.getReturnType());
+		Assert.assertSame(Byte.TYPE, method.getReturnType());
 		Assert.assertEquals("getBYTE_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public char getCHAR_VALUE();
 
 		method = methods[2];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Character.TYPE, method.getReturnType());
+		Assert.assertSame(Character.TYPE, method.getReturnType());
 		Assert.assertEquals("getCHAR_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public double getDOUBLE_VALUE();
 
 		method = methods[3];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Double.TYPE, method.getReturnType());
+		Assert.assertSame(Double.TYPE, method.getReturnType());
 		Assert.assertEquals("getDOUBLE_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public float getFLOAT_VALUE();
 
 		method = methods[4];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Float.TYPE, method.getReturnType());
+		Assert.assertSame(Float.TYPE, method.getReturnType());
 		Assert.assertEquals("getFLOAT_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public int getINT_VALUE();
 
 		method = methods[5];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Integer.TYPE, method.getReturnType());
+		Assert.assertSame(Integer.TYPE, method.getReturnType());
 		Assert.assertEquals("getINT_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public long getLONG_VALUE();
 
 		method = methods[6];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Long.TYPE, method.getReturnType());
+		Assert.assertSame(Long.TYPE, method.getReturnType());
 		Assert.assertEquals("getLONG_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public Object getOBJECT_VALUE();
 
 		method = methods[7];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Object.class, method.getReturnType());
+		Assert.assertSame(Object.class, method.getReturnType());
 		Assert.assertEquals("getOBJECT_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// public short getSHORT_VALUE();
 
 		method = methods[8];
 
 		Assert.assertEquals(Modifier.PUBLIC, method.getModifiers());
-		Assert.assertEquals(Short.TYPE, method.getReturnType());
+		Assert.assertSame(Short.TYPE, method.getReturnType());
 		Assert.assertEquals("getSHORT_VALUE", method.getName());
 
 		parameterTypes = method.getParameterTypes();
 
-		Assert.assertEquals(0, parameterTypes.length);
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
+
+		// public int get_Int(int)
+
+		method = methods[9];
+
+		Assert.assertEquals(
+			Modifier.PUBLIC | Modifier.STATIC, method.getModifiers());
+		Assert.assertSame(Integer.TYPE, method.getReturnType());
+		Assert.assertEquals("get_Int", method.getName());
+
+		parameterTypes = method.getParameterTypes();
+
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 1, parameterTypes.length);
+		Assert.assertSame(int.class, parameterTypes[0]);
+
+		Assert.assertEquals(10, method.invoke(null, 10));
+
+		// public Object get_Object(Object)
+
+		method = methods[10];
+
+		Assert.assertEquals(
+			Modifier.PUBLIC | Modifier.STATIC, method.getModifiers());
+		Assert.assertSame(Object.class, method.getReturnType());
+		Assert.assertEquals("get_Object", method.getName());
+
+		parameterTypes = method.getParameterTypes();
+
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 1, parameterTypes.length);
+		Assert.assertSame(Object.class, parameterTypes[0]);
+
+		Object obj = new Object();
+
+		Assert.assertSame(obj, method.invoke(null, obj));
+
+		// public void get_Void()
+
+		method = methods[11];
+
+		Assert.assertEquals(
+			Modifier.PUBLIC | Modifier.STATIC, method.getModifiers());
+		Assert.assertSame(Void.TYPE, method.getReturnType());
+		Assert.assertEquals("get_Void", method.getName());
+
+		parameterTypes = method.getParameterTypes();
+
+		Assert.assertEquals(
+			Arrays.toString(parameterTypes), 0, parameterTypes.length);
 
 		// Ensure reuse of cached generated class
 
@@ -243,6 +327,9 @@ public class ConstantsBeanFactoryImplTest {
 
 	@Test
 	public void testToConstantsBean() throws Exception {
+		System.setProperty(
+			FinalizeManager.class.getName() + ".thread.enabled",
+			StringPool.FALSE);
 
 		// First create
 
@@ -272,17 +359,19 @@ public class ConstantsBeanFactoryImplTest {
 
 		Assert.assertSame(classLoader1, constantsBeanClass1.getClassLoader());
 
-		Map<EqualityWeakReference<Class<?>>, Reference<?>> constantsBeans =
+		Map<Class<?>, ?> constantsBeans =
 			ConstantsBeanFactoryImpl.constantsBeans;
 
-		Assert.assertEquals(1, constantsBeans.size());
+		Assert.assertEquals(
+			constantsBeans.toString(), 1, constantsBeans.size());
 
 		// Hit cache
 
 		Assert.assertSame(
 			constantsBean1,
 			constantsBeanImpl.getConstantsBean(constantsClass1));
-		Assert.assertEquals(1, constantsBeans.size());
+		Assert.assertEquals(
+			constantsBeans.toString(), 1, constantsBeans.size());
 
 		// Second create
 
@@ -296,39 +385,46 @@ public class ConstantsBeanFactoryImplTest {
 
 		Assert.assertNotSame(constantsBean1, constantsBean2);
 		Assert.assertNotSame(constantsBeanClass1, constantsBean2.getClass());
-		Assert.assertEquals(2, constantsBeans.size());
+
+		Assert.assertEquals(
+			constantsBeans.toString(), 2, constantsBeans.size());
 
 		// Hit cache
 
 		Assert.assertSame(
 			constantsBean2,
 			constantsBeanImpl.getConstantsBean(constantsClass2));
-		Assert.assertEquals(2, constantsBeans.size());
+		Assert.assertEquals(
+			constantsBeans.toString(), 2, constantsBeans.size());
 
-		// Weak reference release
+		// Weak reference release key
 
 		classLoader1 = null;
 		constantsClass1 = null;
 		constantsBean1 = null;
 		constantsBeanClass1 = null;
 
-		long startTime = System.currentTimeMillis();
+		GCUtil.gc(true);
 
-		while ((System.currentTimeMillis() - startTime) < 1000) {
-			System.gc();
+		ReflectionTestUtil.invoke(
+			FinalizeManager.class, "_pollingCleanup", new Class<?>[0]);
 
-			Thread.sleep(1);
+		Assert.assertSame(
+			constantsBean2,
+			constantsBeanImpl.getConstantsBean(constantsClass2));
+		Assert.assertEquals(
+			constantsBeans.toString(), 1, constantsBeans.size());
 
-			Assert.assertSame(
-				constantsBean2,
-				constantsBeanImpl.getConstantsBean(constantsClass2));
+		// Weak reference release value
 
-			if (constantsBeans.size() == 1) {
-				break;
-			}
-		}
+		constantsBean2 = null;
 
-		Assert.assertEquals(1, constantsBeans.size());
+		GCUtil.gc(true);
+
+		ReflectionTestUtil.invoke(
+			FinalizeManager.class, "_pollingCleanup", new Class<?>[0]);
+
+		Assert.assertTrue(constantsBeans.isEmpty());
 	}
 
 	public static class Constants {
@@ -351,34 +447,20 @@ public class ConstantsBeanFactoryImplTest {
 
 		public static short SHORT_VALUE = 0;
 
+		public static int get_Int(int i) {
+			return i;
+		}
+
+		public static Object get_Object(Object obj) {
+			return obj;
+		}
+
+		public static void get_Void() {
+		}
+
 		public Object NON_STATIC_VALUE = new Object();
 
 		protected static Object NON_PUBLIC_VALUE = new Object();
-
-	}
-
-	@Aspect
-	public static class ReflectionUtilAdvice {
-
-		public static void setThrowException(boolean throwException) {
-			_throwException = throwException;
-		}
-
-		@Around(
-			"execution(public static java.lang.reflect.Method " +
-				"com.liferay.portal.kernel.util.ReflectionUtil." +
-					"getDeclaredMethod(Class, String, Class...))")
-		public Object getDeclaredMethod(ProceedingJoinPoint proceedingJoinPoint)
-			throws Throwable {
-
-			if (_throwException) {
-				throw new Exception("Forced Exception");
-			}
-
-			return proceedingJoinPoint.proceed();
-		}
-
-		private static boolean _throwException;
 
 	}
 

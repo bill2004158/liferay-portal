@@ -42,10 +42,11 @@ public class ServicePostAction extends Action {
 			}*/
 		}
 		catch (Exception e) {
-			_log.error(e);
+			_log.error(e, e);
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ServicePostAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ServicePostAction.class);
 
 }

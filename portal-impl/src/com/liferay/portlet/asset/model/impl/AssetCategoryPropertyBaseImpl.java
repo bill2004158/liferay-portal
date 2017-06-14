@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.asset.model.impl;
 
-import com.liferay.portlet.asset.model.AssetCategoryProperty;
-import com.liferay.portlet.asset.service.AssetCategoryPropertyLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.asset.kernel.model.AssetCategoryProperty;
+import com.liferay.asset.kernel.service.AssetCategoryPropertyLocalServiceUtil;
 
 /**
  * The extended model base implementation for the AssetCategoryProperty service. Represents a row in the &quot;AssetCategoryProperty&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.asset.service.AssetCategoryPropertyLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see AssetCategoryPropertyImpl
- * @see com.liferay.portlet.asset.model.AssetCategoryProperty
+ * @see AssetCategoryProperty
  * @generated
  */
+@ProviderType
 public abstract class AssetCategoryPropertyBaseImpl
 	extends AssetCategoryPropertyModelImpl implements AssetCategoryProperty {
 	/*

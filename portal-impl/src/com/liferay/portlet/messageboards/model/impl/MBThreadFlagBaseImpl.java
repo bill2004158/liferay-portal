@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.messageboards.model.impl;
 
-import com.liferay.portlet.messageboards.model.MBThreadFlag;
-import com.liferay.portlet.messageboards.service.MBThreadFlagLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.message.boards.kernel.model.MBThreadFlag;
+import com.liferay.message.boards.kernel.service.MBThreadFlagLocalServiceUtil;
 
 /**
  * The extended model base implementation for the MBThreadFlag service. Represents a row in the &quot;MBThreadFlag&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.messageboards.service.MBThreadFlagLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see MBThreadFlagImpl
- * @see com.liferay.portlet.messageboards.model.MBThreadFlag
+ * @see MBThreadFlag
  * @generated
  */
+@ProviderType
 public abstract class MBThreadFlagBaseImpl extends MBThreadFlagModelImpl
 	implements MBThreadFlag {
 	/*

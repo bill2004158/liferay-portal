@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.ResourceTypePermission;
-import com.liferay.portal.service.ResourceTypePermissionLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.ResourceTypePermission;
+import com.liferay.portal.kernel.service.ResourceTypePermissionLocalServiceUtil;
 
 /**
  * The extended model base implementation for the ResourceTypePermission service. Represents a row in the &quot;ResourceTypePermission&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.ResourceTypePermissionLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ResourceTypePermissionImpl
- * @see com.liferay.portal.model.ResourceTypePermission
+ * @see ResourceTypePermission
  * @generated
  */
+@ProviderType
 public abstract class ResourceTypePermissionBaseImpl
 	extends ResourceTypePermissionModelImpl implements ResourceTypePermission {
 	/*

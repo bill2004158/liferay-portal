@@ -14,18 +14,18 @@
 
 package com.liferay.portlet.expando.service.impl;
 
+import com.liferay.expando.kernel.model.ExpandoColumn;
+import com.liferay.expando.kernel.model.ExpandoValue;
+import com.liferay.expando.kernel.service.permission.ExpandoColumnPermissionUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceMode;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portlet.expando.model.ExpandoColumn;
-import com.liferay.portlet.expando.model.ExpandoValue;
 import com.liferay.portlet.expando.service.base.ExpandoValueServiceBaseImpl;
-import com.liferay.portlet.expando.service.permission.ExpandoColumnPermissionUtil;
 
 import java.io.Serializable;
 
@@ -138,28 +138,30 @@ public class ExpandoValueServiceImpl extends ExpandoValueServiceBaseImpl {
 		ExpandoColumn column = expandoColumnLocalService.getColumn(
 			companyId, className, tableName, columnName);
 
-		if (ExpandoColumnPermissionUtil.contains(
+		if (!ExpandoColumnPermissionUtil.contains(
 				getPermissionChecker(), column, ActionKeys.VIEW)) {
 
-			Serializable dataSerializable = expandoValueLocalService.getData(
-				companyId, className, tableName, columnName, classPK);
-
-			String data = dataSerializable.toString();
-
-			if (Validator.isNotNull(data)) {
-				if (!data.startsWith(StringPool.OPEN_CURLY_BRACE)) {
-					data = "{data:".concat(data).concat("}");
-				}
-
-				return JSONFactoryUtil.createJSONObject(data);
-			}
-			else {
-				return null;
-			}
-		}
-		else {
 			return null;
 		}
+
+		Serializable dataSerializable = expandoValueLocalService.getData(
+			companyId, className, tableName, columnName, classPK);
+
+		String data = dataSerializable.toString();
+
+		if (Validator.isNull(data)) {
+			return null;
+		}
+
+		if (data.startsWith(StringPool.OPEN_CURLY_BRACE)) {
+			return JSONFactoryUtil.createJSONObject(data);
+		}
+
+		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+
+		jsonObject.put("data", data);
+
+		return jsonObject;
 	}
 
 }

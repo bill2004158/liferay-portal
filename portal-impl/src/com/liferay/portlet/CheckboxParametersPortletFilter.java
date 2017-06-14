@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.io.IOException;
 
+import java.util.Objects;
 import java.util.Set;
 
 import javax.portlet.ActionRequest;
@@ -36,7 +37,9 @@ import javax.portlet.filter.ResourceFilter;
 
 /**
  * @author Julio Camarero
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
 public class CheckboxParametersPortletFilter
 	implements ActionFilter, ResourceFilter {
 
@@ -61,13 +64,16 @@ public class CheckboxParametersPortletFilter
 		DynamicActionRequest dynamicActionRequest = new DynamicActionRequest(
 			actionRequest);
 
-		Set<String> parameterNames = SetUtil.fromEnumeration(
-			actionRequest.getParameterNames());
-
 		for (String checkboxName : StringUtil.split(checkboxNames)) {
-			if (!parameterNames.contains(checkboxName)) {
+			String value = actionRequest.getParameter(checkboxName);
+
+			if (value == null) {
 				dynamicActionRequest.setParameter(
 					checkboxName, Boolean.FALSE.toString());
+			}
+			else if (Objects.equals(value, "on")) {
+				dynamicActionRequest.setParameter(
+					checkboxName, Boolean.TRUE.toString());
 			}
 		}
 
@@ -98,6 +104,15 @@ public class CheckboxParametersPortletFilter
 			if (!parameterNames.contains(checkboxName)) {
 				dynamicResourceRequest.setParameter(
 					checkboxName, Boolean.FALSE.toString());
+			}
+			else {
+				String value = dynamicResourceRequest.getParameter(
+					checkboxName);
+
+				if (Objects.equals(value, "on")) {
+					dynamicResourceRequest.setParameter(
+						checkboxName, Boolean.TRUE.toString());
+				}
 			}
 		}
 

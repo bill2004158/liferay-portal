@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.asset.model.impl;
 
-import com.liferay.portlet.asset.model.AssetVocabulary;
-import com.liferay.portlet.asset.service.AssetVocabularyLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
 
 /**
  * The extended model base implementation for the AssetVocabulary service. Represents a row in the &quot;AssetVocabulary&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.asset.service.AssetVocabularyLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see AssetVocabularyImpl
- * @see com.liferay.portlet.asset.model.AssetVocabulary
+ * @see AssetVocabulary
  * @generated
  */
+@ProviderType
 public abstract class AssetVocabularyBaseImpl extends AssetVocabularyModelImpl
 	implements AssetVocabulary {
 	/*

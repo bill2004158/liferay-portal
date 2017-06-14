@@ -16,7 +16,11 @@ package com.liferay.taglib.search;
 
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 import com.liferay.portal.kernel.servlet.DirectRequestDispatcherFactoryUtil;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.taglib.servlet.PipingServletResponse;
+
+import java.io.Writer;
 
 import java.util.Date;
 
@@ -24,7 +28,6 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
 
 /**
  * @author Eudaldo Alonso
@@ -49,6 +52,10 @@ public class StatusSearchEntry extends TextSearchEntry {
 	}
 
 	public ServletContext getServletContext() {
+		if (_servletContext == null) {
+			return ServletContextPool.get(PortalUtil.getServletContextName());
+		}
+
 		return _servletContext;
 	}
 
@@ -65,37 +72,26 @@ public class StatusSearchEntry extends TextSearchEntry {
 	}
 
 	@Override
-	public void print(Object object) throws Exception {
-		if (!(object instanceof PageContext)) {
-			return;
-		}
+	public void print(
+			Writer writer, HttpServletRequest request,
+			HttpServletResponse response)
+		throws Exception {
 
-		PageContext pageContext = (PageContext)object;
-
-		if (_request == null) {
-			_request = (HttpServletRequest)pageContext.getRequest();
-		}
-
-		_request.setAttribute(
+		request.setAttribute(
 			"liferay-ui:search-container-column-status:status", _status);
-		_request.setAttribute(
+		request.setAttribute(
 			"liferay-ui:search-container-column-status:statusByUserId",
 			_statusByUserId);
-		_request.setAttribute(
+		request.setAttribute(
 			"liferay-ui:search-container-column-status:statusDate",
 			_statusDate);
 
-		if (_servletContext != null) {
-			RequestDispatcher requestDispatcher =
-				DirectRequestDispatcherFactoryUtil.getRequestDispatcher(
-					_servletContext, _PAGE);
+		RequestDispatcher requestDispatcher =
+			DirectRequestDispatcherFactoryUtil.getRequestDispatcher(
+				getServletContext(), _PAGE);
 
-			requestDispatcher.include(
-				_request, new PipingServletResponse(pageContext));
-		}
-		else {
-			pageContext.include(_PAGE);
-		}
+		requestDispatcher.include(
+			request, new PipingServletResponse(response, writer));
 	}
 
 	public void setRequest(HttpServletRequest request) {

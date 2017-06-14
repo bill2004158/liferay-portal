@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.LayoutPrototype;
-import com.liferay.portal.service.LayoutPrototypeLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.LayoutPrototype;
+import com.liferay.portal.kernel.service.LayoutPrototypeLocalServiceUtil;
 
 /**
  * The extended model base implementation for the LayoutPrototype service. Represents a row in the &quot;LayoutPrototype&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.LayoutPrototypeLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see LayoutPrototypeImpl
- * @see com.liferay.portal.model.LayoutPrototype
+ * @see LayoutPrototype
  * @generated
  */
+@ProviderType
 public abstract class LayoutPrototypeBaseImpl extends LayoutPrototypeModelImpl
 	implements LayoutPrototype {
 	/*

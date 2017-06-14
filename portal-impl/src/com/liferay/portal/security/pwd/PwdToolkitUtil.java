@@ -14,10 +14,14 @@
 
 package com.liferay.portal.security.pwd;
 
-import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.model.PasswordPolicy;
-import com.liferay.portal.security.ldap.LDAPSettingsUtil;
+import com.liferay.portal.kernel.exception.UserPasswordException;
+import com.liferay.portal.kernel.model.PasswordPolicy;
+import com.liferay.portal.kernel.security.ldap.LDAPSettingsUtil;
+import com.liferay.portal.kernel.security.pwd.Toolkit;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceTracker;
 
 /**
  * @author Brian Wing Shun Chan
@@ -25,11 +29,13 @@ import com.liferay.portal.security.ldap.LDAPSettingsUtil;
 public class PwdToolkitUtil {
 
 	public static String generate(PasswordPolicy passwordPolicy) {
-		return _toolkit.generate(passwordPolicy);
+		Toolkit toolkit = getToolkit();
+
+		return toolkit.generate(passwordPolicy);
 	}
 
 	public static Toolkit getToolkit() {
-		return _toolkit;
+		return _instance._serviceTracker.getService();
 	}
 
 	public static void validate(
@@ -38,21 +44,28 @@ public class PwdToolkitUtil {
 		throws PortalException {
 
 		if (!password1.equals(password2)) {
-			throw new UserPasswordException(
-				UserPasswordException.PASSWORDS_DO_NOT_MATCH);
+			throw new UserPasswordException.MustMatch(userId);
 		}
 
 		if (!LDAPSettingsUtil.isPasswordPolicyEnabled(companyId) &&
 			PwdToolkitUtilThreadLocal.isValidate()) {
 
-			_toolkit.validate(userId, password1, password2, passwordPolicy);
+			Toolkit toolkit = getToolkit();
+
+			toolkit.validate(userId, password1, password2, passwordPolicy);
 		}
 	}
 
-	public void setToolkit(Toolkit toolkit) {
-		_toolkit = toolkit;
+	private PwdToolkitUtil() {
+		Registry registry = RegistryUtil.getRegistry();
+
+		_serviceTracker = registry.trackServices(Toolkit.class);
+
+		_serviceTracker.open();
 	}
 
-	private static Toolkit _toolkit;
+	private static final PwdToolkitUtil _instance = new PwdToolkitUtil();
+
+	private final ServiceTracker<Toolkit, Toolkit> _serviceTracker;
 
 }

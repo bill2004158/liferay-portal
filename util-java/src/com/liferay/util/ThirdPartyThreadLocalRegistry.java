@@ -46,9 +46,9 @@ public class ThirdPartyThreadLocalRegistry {
 		}
 	}
 
-	private static ThreadLocal<Set<ThreadLocal<?>>> _threadLocalSet =
-		new InitialThreadLocal<Set<ThreadLocal<?>>>(
+	private static final ThreadLocal<Set<ThreadLocal<?>>> _threadLocalSet =
+		new InitialThreadLocal<>(
 			ThirdPartyThreadLocalRegistry.class + "._threadLocalSet",
-			new HashSet<ThreadLocal<?>>());
+			HashSet::new);
 
 }

@@ -14,8 +14,10 @@
 
 package com.liferay.portlet.expando.model.impl;
 
-import com.liferay.portlet.expando.model.ExpandoRow;
-import com.liferay.portlet.expando.service.ExpandoRowLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.expando.kernel.model.ExpandoRow;
+import com.liferay.expando.kernel.service.ExpandoRowLocalServiceUtil;
 
 /**
  * The extended model base implementation for the ExpandoRow service. Represents a row in the &quot;ExpandoRow&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portlet.expando.service.ExpandoRowLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ExpandoRowImpl
- * @see com.liferay.portlet.expando.model.ExpandoRow
+ * @see ExpandoRow
  * @generated
  */
+@ProviderType
 public abstract class ExpandoRowBaseImpl extends ExpandoRowModelImpl
 	implements ExpandoRow {
 	/*

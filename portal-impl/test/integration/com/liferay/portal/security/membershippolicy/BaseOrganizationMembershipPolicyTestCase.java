@@ -14,10 +14,22 @@
 
 package com.liferay.portal.security.membershippolicy;
 
-import com.liferay.portal.model.Organization;
-import com.liferay.portal.test.DeleteAfterTestRun;
-import com.liferay.portal.util.test.OrganizationTestUtil;
-import com.liferay.portal.util.test.RoleTestUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.membershippolicy.OrganizationMembershipPolicy;
+import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
+import com.liferay.portal.kernel.test.util.RoleTestUtil;
+import com.liferay.portal.security.membershippolicy.samples.TestOrganizationMembershipPolicy;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceRegistration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
@@ -57,6 +69,18 @@ public abstract class BaseOrganizationMembershipPolicyTestCase
 	public void setUp() throws Exception {
 		super.setUp();
 
+		Registry registry = RegistryUtil.getRegistry();
+
+		Map<String, Object> properties = new HashMap<>();
+
+		properties.put("service.ranking", 1);
+
+		ServiceRegistration<?> serviceRegistration = registry.registerService(
+			OrganizationMembershipPolicy.class,
+			new TestOrganizationMembershipPolicy(), properties);
+
+		serviceRegistrations.add(serviceRegistration);
+
 		organization = OrganizationTestUtil.addOrganization();
 	}
 
@@ -65,10 +89,18 @@ public abstract class BaseOrganizationMembershipPolicyTestCase
 	public void tearDown() throws Exception {
 		super.tearDown();
 
+		deleteOrganizations(_forbiddenOrganizationIds);
+
 		_forbiddenOrganizationIds = new long[2];
 		_forbiddenRoleIds = new long[2];
+
+		deleteOrganizations(_requiredOrganizationIds);
+
 		_requiredOrganizationIds = new long[2];
 		_requiredRoleIds = new long[2];
+
+		deleteOrganizations(_standardOrganizationIds);
+
 		_standardOrganizationIds = new long[2];
 		_standardRoleIds = new long[2];
 	}
@@ -142,6 +174,27 @@ public abstract class BaseOrganizationMembershipPolicyTestCase
 			group.getGroupId());
 
 		return _standardRoleIds;
+	}
+
+	protected void deleteOrganizations(long[] organizationIds)
+		throws PortalException {
+
+		for (long organizationId : organizationIds) {
+			Organization organization =
+				OrganizationLocalServiceUtil.fetchOrganization(organizationId);
+
+			if (organization == null) {
+				continue;
+			}
+
+			for (User user : UserLocalServiceUtil.getOrganizationUsers(
+					organizationId)) {
+
+				UserLocalServiceUtil.deleteUser(user);
+			}
+
+			OrganizationLocalServiceUtil.deleteOrganization(organization);
+		}
 	}
 
 	@DeleteAfterTestRun

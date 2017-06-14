@@ -37,15 +37,15 @@ public class PortalContextLoaderLifecycleThreadLocal {
 		_initializing.set(initializing);
 	}
 
-	private static ThreadLocal<Boolean> _destroying =
-		new InitialThreadLocal<Boolean>(
+	private static final ThreadLocal<Boolean> _destroying =
+		new InitialThreadLocal<>(
 			PortalContextLoaderLifecycleThreadLocal.class +
 				"._destroying",
-			Boolean.FALSE);
-	private static ThreadLocal<Boolean> _initializing =
-		new InitialThreadLocal<Boolean>(
+			() -> Boolean.FALSE);
+	private static final ThreadLocal<Boolean> _initializing =
+		new InitialThreadLocal<>(
 			PortalContextLoaderLifecycleThreadLocal.class +
 				"._initializing",
-			Boolean.FALSE);
+			() -> Boolean.FALSE);
 
 }

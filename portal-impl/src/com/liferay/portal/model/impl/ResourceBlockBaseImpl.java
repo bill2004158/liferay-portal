@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.ResourceBlock;
-import com.liferay.portal.service.ResourceBlockLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.ResourceBlock;
+import com.liferay.portal.kernel.service.ResourceBlockLocalServiceUtil;
 
 /**
  * The extended model base implementation for the ResourceBlock service. Represents a row in the &quot;ResourceBlock&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.ResourceBlockLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ResourceBlockImpl
- * @see com.liferay.portal.model.ResourceBlock
+ * @see ResourceBlock
  * @generated
  */
+@ProviderType
 public abstract class ResourceBlockBaseImpl extends ResourceBlockModelImpl
 	implements ResourceBlock {
 	/*

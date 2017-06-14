@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.Subscription;
-import com.liferay.portal.service.SubscriptionLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.Subscription;
+import com.liferay.portal.kernel.service.SubscriptionLocalServiceUtil;
 
 /**
  * The extended model base implementation for the Subscription service. Represents a row in the &quot;Subscription&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,10 @@ import com.liferay.portal.service.SubscriptionLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see SubscriptionImpl
- * @see com.liferay.portal.model.Subscription
+ * @see Subscription
  * @generated
  */
+@ProviderType
 public abstract class SubscriptionBaseImpl extends SubscriptionModelImpl
 	implements Subscription {
 	/*

@@ -15,11 +15,10 @@
 package com.liferay.portal.jsonwebservice;
 
 import com.liferay.portal.json.JSONFactoryImpl;
-import com.liferay.portal.json.JSONIncludesManagerImpl;
 import com.liferay.portal.json.transformer.SortedHashMapJSONTransformer;
 import com.liferay.portal.jsonwebservice.action.JSONWebServiceInvokerAction;
+import com.liferay.portal.kernel.json.JSONDeserializer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONIncludesManagerUtil;
 import com.liferay.portal.kernel.json.JSONSerializable;
 import com.liferay.portal.kernel.json.JSONSerializer;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceAction;
@@ -37,6 +36,8 @@ import com.liferay.portal.util.PropsImpl;
 import java.lang.reflect.Method;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -59,12 +60,6 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 
 		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
 
-		JSONIncludesManagerUtil jsonIncludesManagerUtil =
-			new JSONIncludesManagerUtil();
-
-		jsonIncludesManagerUtil.setJSONIncludesManager(
-			new JSONIncludesManagerImpl());
-
 		JSONWebServiceActionsManagerUtil jsonWebServiceActionsManagerUtil =
 			new JSONWebServiceActionsManagerUtil();
 
@@ -78,12 +73,28 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 			new MethodParametersResolverImpl());
 	}
 
+	protected static void registerAction(Object action) {
+		registerAction(action, StringPool.BLANK);
+	}
+
+	protected static void registerAction(
+		Object action, String servletContextName) {
+
+		registerActionClass(action, action.getClass(), servletContextName);
+	}
+
 	protected static void registerActionClass(Class<?> actionClass) {
 		registerActionClass(actionClass, StringPool.BLANK);
 	}
 
 	protected static void registerActionClass(
-		Class<?> actionClass, String servletContextPath) {
+		Class<?> actionClass, String servletContextName) {
+
+		registerActionClass(null, actionClass, servletContextName);
+	}
+
+	protected static void registerActionClass(
+		Object action, Class<?> actionClass, String servletContextName) {
 
 		JSONWebServiceMappingResolver jsonWebServiceMappingResolver =
 			new JSONWebServiceMappingResolver(new JSONWebServiceNaming());
@@ -100,14 +111,22 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 			String method = jsonWebServiceMappingResolver.resolveHttpMethod(
 				actionMethod);
 
-			JSONWebServiceActionsManagerUtil.registerJSONWebServiceAction(
-				servletContextPath, actionClass, actionMethod, path, method);
+			if (action != null) {
+				JSONWebServiceActionsManagerUtil.registerJSONWebServiceAction(
+					servletContextName, StringPool.BLANK, action, actionClass,
+					actionMethod, path, method);
+			}
+			else {
+				JSONWebServiceActionsManagerUtil.registerJSONWebServiceAction(
+					servletContextName, StringPool.BLANK, actionClass,
+					actionMethod, path, method);
+			}
 		}
 	}
 
 	protected MockHttpServletRequest createHttpRequest(String pathInfo) {
 		MockHttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest();
+			new MockHttpServletRequest30();
 
 		mockHttpServletRequest.setMethod(HttpMethods.GET);
 		mockHttpServletRequest.setPathInfo(pathInfo);
@@ -119,7 +138,7 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 		String pathInfo, String method) {
 
 		MockHttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest();
+			new MockHttpServletRequest30();
 
 		mockHttpServletRequest.setMethod(method);
 		mockHttpServletRequest.setPathInfo(pathInfo);
@@ -136,13 +155,12 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 	}
 
 	protected void setServletContext(
-		MockHttpServletRequest mockHttpServletRequest, String contextPath) {
+		MockHttpServletRequest mockHttpServletRequest, String contextName) {
 
-		mockHttpServletRequest.setContextPath(contextPath);
+		MockServletContext mockServletContext =
+			(MockServletContext)mockHttpServletRequest.getServletContext();
 
-		MockServletContext mockServletContext = new MockServletContext();
-
-		mockServletContext.setContextPath(contextPath);
+		mockServletContext.setServletContextName(contextName);
 
 		MockHttpSession mockHttpServletSession = new MockHttpSession(
 			mockServletContext);
@@ -162,18 +180,18 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 				jsonWebServiceInvokerAction.new InvokerResult(
 					invokerResult.getResult()) {
 
-				@Override
-				protected JSONSerializer createJSONSerializer() {
-					JSONSerializer jsonSerializer =
-						super.createJSONSerializer();
+					@Override
+					protected JSONSerializer createJSONSerializer() {
+						JSONSerializer jsonSerializer =
+							JSONFactoryUtil.createJSONSerializer();
 
-					jsonSerializer.transform(
-						new SortedHashMapJSONTransformer(), HashMap.class);
+						jsonSerializer.transform(
+							new SortedHashMapJSONTransformer(), HashMap.class);
 
-					return jsonSerializer;
-				}
+						return jsonSerializer;
+					}
 
-			};
+				};
 
 			object = newInvokerResult;
 		}
@@ -183,8 +201,6 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 		}
 
 		JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
-
-		jsonSerializer.exclude("*.class");
 
 		return jsonSerializer.serialize(object);
 	}
@@ -196,10 +212,41 @@ public abstract class BaseJSONWebServiceTestCase extends PowerMockito {
 
 		JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
 
-		jsonSerializer.exclude("*.class");
 		jsonSerializer.include(includes);
 
 		return jsonSerializer.serialize(object);
+	}
+
+	protected List<Object> toList(String json) {
+		JSONDeserializer<Map<String, Object>> jsonDeserializer =
+			JSONFactoryUtil.createJSONDeserializer();
+
+		return (List<Object>)jsonDeserializer.deserialize(json);
+	}
+
+	protected Map<String, Object> toMap(String json) {
+		JSONDeserializer<Map<String, Object>> jsonDeserializer =
+			JSONFactoryUtil.createJSONDeserializer();
+
+		return jsonDeserializer.deserialize(json);
+	}
+
+	private class MockHttpServletRequest30 extends MockHttpServletRequest {
+
+		public MockHttpServletRequest30() {
+			_mockServletContext = new MockServletContext() {};
+
+			_mockServletContext.setContextPath(StringPool.BLANK);
+			_mockServletContext.setServletContextName(StringPool.BLANK);
+		}
+
+		@Override
+		public MockServletContext getServletContext() {
+			return _mockServletContext;
+		}
+
+		private final MockServletContext _mockServletContext;
+
 	}
 
 }

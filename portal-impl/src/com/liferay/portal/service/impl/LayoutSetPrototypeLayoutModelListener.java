@@ -16,16 +16,15 @@ package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.BaseModelListener;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.model.LayoutSetPrototype;
+import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
+import com.liferay.portal.kernel.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
-import com.liferay.portal.model.BaseModelListener;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.model.LayoutSet;
-import com.liferay.portal.model.LayoutSetPrototype;
-import com.liferay.portal.service.LayoutSetLocalServiceUtil;
-import com.liferay.portal.service.LayoutSetPrototypeLocalServiceUtil;
-import com.liferay.portal.service.persistence.LayoutSetPrototypeUtil;
-import com.liferay.portlet.sites.util.Sites;
+import com.liferay.sites.kernel.util.Sites;
 
 import java.util.Date;
 
@@ -51,20 +50,25 @@ public class LayoutSetPrototypeLayoutModelListener
 	}
 
 	protected void updateLayoutSetPrototype(Layout layout, Date modifiedDate) {
+		if (layout == null) {
+			return;
+		}
+
+		Group group = layout.getGroup();
+
+		if ((group == null) || !group.isLayoutSetPrototype()) {
+			return;
+		}
+
 		try {
-			Group group = layout.getGroup();
-
-			if (!group.isLayoutSetPrototype()) {
-				return;
-			}
-
 			LayoutSetPrototype layoutSetPrototype =
 				LayoutSetPrototypeLocalServiceUtil.getLayoutSetPrototype(
 					group.getClassPK());
 
 			layoutSetPrototype.setModifiedDate(modifiedDate);
 
-			LayoutSetPrototypeUtil.update(layoutSetPrototype);
+			LayoutSetPrototypeLocalServiceUtil.updateLayoutSetPrototype(
+				layoutSetPrototype);
 
 			LayoutSet layoutSet = layoutSetPrototype.getLayoutSet();
 
@@ -82,7 +86,7 @@ public class LayoutSetPrototypeLayoutModelListener
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutSetPrototypeLayoutModelListener.class);
 
 }

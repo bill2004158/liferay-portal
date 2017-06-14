@@ -14,19 +14,22 @@
 
 package com.liferay.portal.service.http;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.HttpPrincipal;
+import com.liferay.portal.kernel.service.PortletServiceUtil;
+import com.liferay.portal.kernel.service.http.TunnelUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
-import com.liferay.portal.security.auth.HttpPrincipal;
-import com.liferay.portal.service.PortletServiceUtil;
 
 /**
  * Provides the HTTP utility for the
- * {@link com.liferay.portal.service.PortletServiceUtil} service utility. The
+ * {@link PortletServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link com.liferay.portal.security.auth.HttpPrincipal} parameter.
+ * {@link HttpPrincipal} parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -45,10 +48,11 @@ import com.liferay.portal.service.PortletServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see PortletServiceSoap
- * @see com.liferay.portal.security.auth.HttpPrincipal
- * @see com.liferay.portal.service.PortletServiceUtil
+ * @see HttpPrincipal
+ * @see PortletServiceUtil
  * @generated
  */
+@ProviderType
 public class PortletServiceHttp {
 	public static com.liferay.portal.kernel.json.JSONArray getWARPortlets(
 		HttpPrincipal httpPrincipal) {
@@ -76,7 +80,7 @@ public class PortletServiceHttp {
 		}
 	}
 
-	public static com.liferay.portal.model.Portlet updatePortlet(
+	public static com.liferay.portal.kernel.model.Portlet updatePortlet(
 		HttpPrincipal httpPrincipal, long companyId,
 		java.lang.String portletId, java.lang.String roles, boolean active)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -100,7 +104,7 @@ public class PortletServiceHttp {
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
-			return (com.liferay.portal.model.Portlet)returnObj;
+			return (com.liferay.portal.kernel.model.Portlet)returnObj;
 		}
 		catch (com.liferay.portal.kernel.exception.SystemException se) {
 			_log.error(se, se);

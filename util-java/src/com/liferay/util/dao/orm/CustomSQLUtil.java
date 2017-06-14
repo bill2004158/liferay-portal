@@ -26,6 +26,7 @@ import java.sql.SQLException;
  * @author Brian Wing Shun Chan
  * @author Bruno Farache
  * @author Raymond Augé
+ * @see    com.liferay.portal.dao.orm.custom.sql.CustomSQLUtil
  */
 public class CustomSQLUtil {
 
@@ -143,23 +144,27 @@ public class CustomSQLUtil {
 			sql, field, operator, last, values);
 	}
 
-	public static String replaceOrderBy(String sql, OrderByComparator obc) {
+	public static String replaceOrderBy(String sql, OrderByComparator<?> obc) {
 		return _instance._customSQL.replaceOrderBy(sql, obc);
 	}
 
 	private CustomSQLUtil() {
+		CustomSQL customSQL = null;
+
 		try {
-			_customSQL = new CustomSQL();
+			customSQL = new CustomSQL();
 		}
 		catch (Exception e) {
 			_log.error(e, e);
 		}
+
+		_customSQL = customSQL;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(CustomSQLUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(CustomSQLUtil.class);
 
-	private static CustomSQLUtil _instance = new CustomSQLUtil();
+	private static final CustomSQLUtil _instance = new CustomSQLUtil();
 
-	private CustomSQL _customSQL;
+	private final CustomSQL _customSQL;
 
 }
